@@ -1,0 +1,108 @@
+// ─────────────────────────────────────────────────────────────
+// adapters/shared.ts
+// Shared heuristics used by all vendor adapters.
+// Never import from this file in components — adapters only.
+// ─────────────────────────────────────────────────────────────
+
+import type { Model, UsageType } from "@/lib/types"
+
+// ─────────────────────────────────────────────────────────────
+// Model tier → complexity score baseline
+// High-tier model on a task = higher expected complexity
+// ─────────────────────────────────────────────────────────────
+
+const MODEL_COMPLEXITY_BASELINE: Record<Model, number> = {
+  "Claude Opus":   8,
+  "GPT-4":         8,
+  "Gemini Ultra":  8,
+  "Claude Sonnet": 5,
+  "GPT-4o":        5,
+  "Gemini Pro":    5,
+  "Claude Haiku":  3,
+  "GPT-4o-mini":   3,
+  "GPT-3.5":       2,
+  "N/A":           3,
+}
+
+/**
+ * Infers complexityScore (1–10) from model tier + usageType.
+ * Adds ±2 variance to avoid flat data in mock.
+ */
+export function inferComplexityScore(model: Model, usageType: UsageType): number {
+  const base = MODEL_COMPLEXITY_BASELINE[model]
+
+  const usageModifier: Record<UsageType, number> = {
+    automation: +1,
+    research:   +1,
+    analysis:   +1,
+    coding:      0,
+    content:    -1,
+    support:    -2,
+  }
+
+  const variance = (Math.random() * 4) - 2           // –2 to +2
+  const raw = base + usageModifier[usageType] + variance
+  return Math.min(10, Math.max(1, Math.round(raw)))
+}
+
+// ─────────────────────────────────────────────────────────────
+// Hours saved heuristic
+// Based on output tokens — more tokens = more work done for user
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Estimates hours saved from output tokens.
+ * Baseline: 1000 output tokens ≈ 0.5h saved for knowledge work.
+ * usageType multiplier reflects how much time AI actually displaces.
+ */
+export function inferHoursSaved(outputTokens: number, usageType: UsageType): number {
+  const BASE_HOURS_PER_1K_TOKENS = 0.5
+
+  const multiplier: Record<UsageType, number> = {
+    coding:     1.8,   // code gen saves a lot of time
+    automation: 1.6,
+    research:   1.4,
+    analysis:   1.2,
+    content:    1.0,
+    support:    0.6,   // support tasks are shorter loops
+  }
+
+  const raw = (outputTokens / 1000) * BASE_HOURS_PER_1K_TOKENS * multiplier[usageType]
+  return Math.round(raw * 10) / 10                   // 1 decimal place
+}
+
+// ─────────────────────────────────────────────────────────────
+// Task success heuristic
+// Inferred from output/input ratio — high ratio = productive session
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Returns { successfulTasks, totalTasks } from request count.
+ * Success rate varies by usageType.
+ */
+export function inferTaskCounts(
+  requests: number,
+  usageType: UsageType
+): { successfulTasks: number; totalTasks: number } {
+  const successRate: Record<UsageType, number> = {
+    coding:     0.78,
+    automation: 0.82,
+    research:   0.88,
+    analysis:   0.85,
+    content:    0.90,
+    support:    0.92,
+  }
+
+  const totalTasks = Math.max(1, requests)
+  const successfulTasks = Math.max(1, Math.round(totalTasks * successRate[usageType]))
+
+  return { successfulTasks, totalTasks }
+}
+
+// ─────────────────────────────────────────────────────────────
+// ID generator
+// ─────────────────────────────────────────────────────────────
+
+export function generateLogId(vendor: string, index: number): string {
+  return `${vendor}_${Date.now()}_${index}`
+}

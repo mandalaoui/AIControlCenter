@@ -1,0 +1,58 @@
+"use client";
+
+import { useTranslation } from "react-i18next";
+
+import { DashboardCard } from "@/components/dashboard-card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatCurrency, formatRoiDisplay } from "@/lib/format";
+import type { ModelUsageRow } from "@/lib/types";
+
+interface ModelUsageTableProps {
+  rows: ModelUsageRow[];
+}
+
+export function ModelUsageTable({ rows }: ModelUsageTableProps) {
+  const { t } = useTranslation("common");
+
+  return (
+    <DashboardCard title={t("modelUsageBreakdown")}>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t("model")}</TableHead>
+            <TableHead className="text-end">{t("spend")}</TableHead>
+            <TableHead className="text-end">{t("requests")}</TableHead>
+            <TableHead className="text-end">{t("mismatchRate")}</TableHead>
+            <TableHead className="text-end">{t("estimatedROI")}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.name}>
+              <TableCell className="font-medium">{row.name}</TableCell>
+              <TableCell className="text-end font-mono" dir="ltr">
+                {formatCurrency(row.spend)}
+              </TableCell>
+              <TableCell className="text-end" dir="ltr">
+                {row.requests.toLocaleString("en-US")}
+              </TableCell>
+              <TableCell className="text-end" dir="ltr">
+                {Math.round(row.mismatchRate * 100)}%
+              </TableCell>
+              <TableCell className="text-end" dir="ltr">
+                {formatRoiDisplay(row.roi)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </DashboardCard>
+  );
+}

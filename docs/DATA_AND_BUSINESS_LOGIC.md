@@ -316,3 +316,71 @@ Pattern:
 
 This design ensures safe, efficient, and explainable AI-driven Q&A on your organizational AI usage.
 
+---
+
+## Vendor Adapter Layer
+
+### Purpose
+
+Each AI vendor exposes usage data in a different raw format.  
+The adapter layer normalizes all vendor formats into a single `UsageLog` —  
+the only data model the rest of the system knows about.
+
+**Rule: nothing outside `/lib/adapters/` ever sees raw vendor data.**
+
+### Location
+
+/lib/adapters/
+
+shared.ts                  ← heuristics shared by all adapters  
+cursor.adapter.ts          ← Cursor IDE raw → UsageLog  
+anthropic.adapter.ts       ← Anthropic API raw → UsageLog  
+openai.adapter.ts          ← OpenAI API raw → UsageLog  
+github-copilot.adapter.ts  ← GitHub Copilot raw → UsageLog  
+index.ts                   ← single entry point, exports adaptAll()
+
+### Data Flow
+
+CursorRawRecord[]          →  cursor.adapter.ts     ↘  
+AnthropicRawRecord[]       →  anthropic.adapter.ts  →  UsageLog[]  →  /lib/analytics.ts  
+OpenAIRawRecord[]          →  openai.adapter.ts     ↗  
+GitHubCopilotRawRecord[]   →  github-copilot.adapter.ts
+
+### Usage
+
+```typescript
+import { adaptAll } from "@/lib/adapters"
+
+const logs = adaptAll({
+  cursor:        cursorRawData,
+  anthropic:     anthropicRawData,
+  openai:        openaiRawData,
+  githubCopilot: copilotRawData,
+})
+// → UsageLog[], sorted by date ascending
+```
+
+### Heuristics (shared.ts)
+
+Fields that don't exist in vendor APIs are inferred:
+
+| Field                 | Source                                                             |
+|-----------------------|--------------------------------------------------------------------|
+| `complexityScore`     | model tier baseline + usageType modifier + ±2 variance             |
+| `estimatedHoursSaved` | outputTokens × per-usageType multiplier                            |
+| `successfulTasks`     | requests × per-usageType success rate                              |
+| `cost`                | token counts × public pricing per 1K tokens (or seat cost for Copilot/Cursor) |
+
+### Adding a New Vendor
+
+1. Create `/lib/adapters/{vendor}.adapter.ts`
+2. Define `{Vendor}RawRecord` interface matching the vendor's export format
+3. Implement `adapt{Vendor}Record(raw, index): UsageLog`
+4. Export from `index.ts` and add to `adaptAll()`
+5. No other files need to change
+
+### Current Status (prototype)
+
+All adapters use mock raw data defined in `/data/mock_logs.json`.  
+In production, raw records would be fetched from vendor APIs  
+via the connector defined in `/app/integrations/`.
