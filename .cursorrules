@@ -1,0 +1,35 @@
+# AIControlCenter — Cursor Rules
+
+## Before every task
+- Read /docs/PROJECT_CONTEXT.md
+- Read /docs/DATA_AND_BUSINESS_LOGIC.md
+- Read /docs/UI_UX_GUIDELINES.md
+- Read /docs/TASKS.md
+
+## Code rules
+- TypeScript strict mode only — no `any`
+- Never calculate metrics inside components
+- Never pass raw logs to Claude API
+- Always use buildDashboardContext() before AI calls
+- Never hardcode colors — Tailwind semantic classes only
+- No component over 150 lines — split if needed
+- Business logic only in /lib/analytics.ts
+
+## File structure rules
+- Pages in /app/
+- Components in /components/
+- Business logic in /lib/
+- Data files in /data/
+- API routes in /app/api/
+
+## AI routes rules
+- Model: claude-sonnet-4-20250514
+- Max output tokens: 500 for /api/query, 1500 for /api/analyze
+- Structured JSON output only from /api/analyze
+- Validate JSON before returning from any AI route
+
+## Stack
+- Next.js 15 App Router
+- TypeScript + Tailwind + shadcn/ui + Recharts
+- i18next for all user-facing strings
+- next-themes for dark/light
