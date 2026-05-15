@@ -17,15 +17,10 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { getVerticalBarChartMargin } from "@/lib/i18n/chart-layout";
+import { translateTool } from "@/lib/i18n/labels";
 import { formatRoiDisplay } from "@/lib/format";
 import type { ChartInsightData, RoiChartItem } from "@/lib/types";
-
-const chartConfig = {
-  roi: {
-    label: "ROI",
-    color: "var(--chart-4)",
-  },
-} satisfies ChartConfig;
 
 interface RoiByToolChartProps {
   data: RoiChartItem[];
@@ -34,11 +29,24 @@ interface RoiByToolChartProps {
 
 export function RoiByToolChart({ data, insight }: RoiByToolChartProps) {
   const { t } = useTranslation("common");
-
+  const chartConfig = {
+    roi: {
+      label: t("estimatedROI"),
+      color: "var(--chart-4)",
+    },
+  } satisfies ChartConfig;
+  const localizedData = data.map((item) => ({
+    ...item,
+    name: translateTool(item.name, t),
+  }));
   return (
     <DashboardCard title={t("roiByTool")}>
       <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
-        <BarChart data={data} layout="vertical" margin={{ left: 8 }}>
+        <BarChart
+          data={localizedData}
+          layout="vertical"
+          margin={getVerticalBarChartMargin()}
+        >
           <CartesianGrid horizontal={false} strokeDasharray="3 3" />
           <XAxis type="number" tickLine={false} axisLine={false} />
           <YAxis
@@ -56,7 +64,7 @@ export function RoiByToolChart({ data, insight }: RoiByToolChartProps) {
               />
             }
           />
-          <Bar dataKey="roi" fill="var(--color-roi)" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="roi" fill="var(--color-roi)" radius={[4, 0, 0, 4]} />
         </BarChart>
       </ChartContainer>
       <AiInsightBox insight={insight} className="mt-4" />

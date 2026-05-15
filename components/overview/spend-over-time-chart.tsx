@@ -19,6 +19,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { getChartMargin } from "@/lib/i18n/chart-layout";
 import { formatCurrency } from "@/lib/format";
 import { SPEND_LINE_KEYS } from "@/lib/overview";
 import type { SpendOverTimePoint } from "@/lib/types";
@@ -53,7 +54,7 @@ export function SpendOverTimeChart({ data }: SpendOverTimeChartProps) {
   return (
     <DashboardCard title={t("spendOverTime")}>
       <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
-        <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <LineChart data={data} margin={getChartMargin({ yAxis: 56 })}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tickLine={false} axisLine={false} />
           <YAxis tickLine={false} axisLine={false} width={56} />

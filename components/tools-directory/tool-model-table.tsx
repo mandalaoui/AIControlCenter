@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatNumber } from "@/lib/format";
 import type { ToolModelInfo } from "@/lib/types";
 
 interface ToolModelTableProps {
@@ -26,9 +27,9 @@ export function ToolModelTable({ models }: ToolModelTableProps) {
         <TableHeader>
           <TableRow>
             <TableHead>{t("model")}</TableHead>
-            <TableHead dir="ltr">{t("contextWindow")}</TableHead>
-            <TableHead dir="ltr">{t("inputPrice")}</TableHead>
-            <TableHead dir="ltr">{t("outputPrice")}</TableHead>
+            <TableHead>{t("contextWindow")}</TableHead>
+            <TableHead>{t("inputPrice")}</TableHead>
+            <TableHead>{t("outputPrice")}</TableHead>
             <TableHead>{t("speed")}</TableHead>
             <TableHead>{t("recommended")}</TableHead>
           </TableRow>
@@ -37,11 +38,11 @@ export function ToolModelTable({ models }: ToolModelTableProps) {
           {models.map((model) => (
             <TableRow key={model.name}>
               <TableCell className="font-medium">{model.displayName}</TableCell>
-              <TableCell dir="ltr">
-                {model.contextWindow.toLocaleString("en-US")}
+              <TableCell>
+                {formatNumber(model.contextWindow)}
               </TableCell>
-              <TableCell dir="ltr">${model.inputPricePer1M.toFixed(2)}</TableCell>
-              <TableCell dir="ltr">${model.outputPricePer1M.toFixed(2)}</TableCell>
+              <TableCell>${model.inputPricePer1M.toFixed(2)}</TableCell>
+              <TableCell>${model.outputPricePer1M.toFixed(2)}</TableCell>
               <TableCell>{t(`modelSpeed.${model.speed}`)}</TableCell>
               <TableCell>
                 {model.recommended ? (

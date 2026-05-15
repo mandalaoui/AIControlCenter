@@ -10,7 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatRoiDisplay } from "@/lib/format";
+import { translateEntity } from "@/lib/i18n/labels";
+import { formatCurrency, formatNumber, formatRoiDisplay } from "@/lib/format";
 import type { CostBreakdownRow } from "@/lib/types";
 
 interface CostBreakdownTableProps {
@@ -38,18 +39,20 @@ export function CostBreakdownTable({ rows }: CostBreakdownTableProps) {
       <TableBody>
         {rows.map((row) => (
           <TableRow key={row.key}>
-            <TableCell className="font-medium">{row.label}</TableCell>
-            <TableCell className="text-end font-mono" dir="ltr">
+            <TableCell className="font-medium">
+              {translateEntity(row.label, t)}
+            </TableCell>
+            <TableCell className="text-end font-mono">
               {formatCurrency(row.spend)}
             </TableCell>
-            <TableCell className="text-end" dir="ltr">
+            <TableCell className="text-end">
               {row.sharePercent}%
             </TableCell>
-            <TableCell className="text-end" dir="ltr">
+            <TableCell className="text-end">
               {formatRoiDisplay(row.roi)}
             </TableCell>
-            <TableCell className="text-end" dir="ltr">
-              {row.hoursSaved.toLocaleString("en-US")}
+            <TableCell className="text-end">
+              {formatNumber(row.hoursSaved)}
             </TableCell>
           </TableRow>
         ))}

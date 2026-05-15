@@ -26,7 +26,7 @@ const DEFAULT_FILTERS: ToolsDirectoryFilters = {
 };
 
 export function ToolsDirectoryView({ tools }: ToolsDirectoryViewProps) {
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
   const [filters, setFilters] = useState<ToolsDirectoryFilters>(DEFAULT_FILTERS);
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -37,8 +37,6 @@ export function ToolsDirectoryView({ tools }: ToolsDirectoryViewProps) {
     () => filterToolsDirectory(tools, filters),
     [tools, filters],
   );
-
-  const sheetSide = i18n.language === "he" ? "left" : "right";
 
   const handleSelectTool = (tool: AITool) => {
     setSelectedTool(tool);
@@ -67,7 +65,6 @@ export function ToolsDirectoryView({ tools }: ToolsDirectoryViewProps) {
         tool={selectedTool}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        sheetSide={sheetSide}
       />
     </div>
   );

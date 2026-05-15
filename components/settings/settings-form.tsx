@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
-import { useLanguage } from "@/components/i18n-provider";
 import { DashboardCard } from "@/components/dashboard-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Language } from "@/lib/i18n/settings";
 
 const ORG_STORAGE_KEY = "ai-control-center-org-name";
 const API_KEY_STORAGE_KEY = "ai-control-center-api-key-demo";
@@ -24,21 +22,18 @@ const API_KEY_STORAGE_KEY = "ai-control-center-api-key-demo";
 export function SettingsForm() {
   const { t } = useTranslation("common");
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage } = useLanguage();
-  const [orgName, setOrgName] = useState("Acme Corp");
+  const [orgName, setOrgName] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const storedOrg = window.localStorage.getItem(ORG_STORAGE_KEY);
-    if (storedOrg) {
-      setOrgName(storedOrg);
-    }
+    setOrgName(storedOrg ?? t("acmeCorp"));
     const storedKey = window.localStorage.getItem(API_KEY_STORAGE_KEY);
     if (storedKey) {
       setApiKey(storedKey);
     }
-  }, []);
+  }, [t]);
 
   const handleSave = () => {
     window.localStorage.setItem(ORG_STORAGE_KEY, orgName);
@@ -71,42 +66,23 @@ export function SettingsForm() {
       </DashboardCard>
 
       <DashboardCard title={t("appearanceSettings")}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t("theme")}
-            </label>
-            <Select
-              value={theme ?? "system"}
-              onValueChange={(value) => setTheme(value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">{t("themeLight")}</SelectItem>
-                <SelectItem value="dark">{t("themeDark")}</SelectItem>
-                <SelectItem value="system">{t("themeSystem")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t("language")}
-            </label>
-            <Select
-              value={language}
-              onValueChange={(value) => setLanguage(value as Language)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">{t("languageEn")}</SelectItem>
-                <SelectItem value="he">{t("languageHe")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("theme")}
+          </label>
+          <Select
+            value={theme ?? "system"}
+            onValueChange={(value) => setTheme(value)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="light">{t("themeLight")}</SelectItem>
+              <SelectItem value="dark">{t("themeDark")}</SelectItem>
+              <SelectItem value="system">{t("themeSystem")}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </DashboardCard>
 
@@ -144,3 +120,4 @@ export function SettingsForm() {
     </div>
   );
 }
+

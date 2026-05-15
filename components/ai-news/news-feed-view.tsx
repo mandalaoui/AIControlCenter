@@ -11,10 +11,11 @@ import { AiErrorState } from "@/components/shared/ai-error-state";
 import { CardGridSkeleton } from "@/components/shared/page-skeletons";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import { getIntlLocale } from "@/lib/i18n/format-locale";
 import type { NewsFilterTab } from "@/lib/types";
 
 export function NewsFeedView() {
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
   const { data, loading, error, refresh } = useAiNews();
   const [activeTab, setActiveTab] = useState<NewsFilterTab>("all");
 
@@ -30,7 +31,7 @@ export function NewsFeedView() {
 
   const lastUpdatedLabel = data?.lastUpdated
     ? new Date(data.lastUpdated).toLocaleString(
-        i18n.language === "he" ? "he-IL" : "en-US",
+        getIntlLocale(),
       )
     : null;
 

@@ -6,8 +6,10 @@ import type { AiNewsResponse } from "@/lib/types";
 
 const NEWS_MAX_TOKENS = 1500;
 
-const NEWS_SYSTEM_PROMPT = `You are an AI industry news curator for an enterprise AI cost intelligence platform.
+function buildNewsSystemPrompt(): string {
+  return `You are an AI industry news curator for an enterprise AI cost intelligence platform.
 Search the web for recent (last 30 days) AI industry news relevant to enterprise buyers: new models, pricing changes, new tools, and industry trends.
+Write title and summary fields in English.
 
 Return ONLY valid JSON with this exact shape:
 {
@@ -30,6 +32,7 @@ Rules:
 - Use real, verifiable URLs from search results
 - Categories must be exactly one of: new-models, pricing, new-tools, industry
 - No markdown, no commentary outside JSON`;
+}
 
 interface ClaudeTextBlock {
   type: string;
@@ -61,7 +64,7 @@ async function callClaudeWithWebSearch(): Promise<string> {
     body: JSON.stringify({
       model: CLAUDE_MODEL,
       max_tokens: NEWS_MAX_TOKENS,
-      system: NEWS_SYSTEM_PROMPT,
+      system: buildNewsSystemPrompt(),
       tools: [
         {
           type: "web_search_20250305",

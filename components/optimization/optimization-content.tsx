@@ -39,7 +39,7 @@ export function OptimizationContent() {
   return (
     <div className="space-y-6">
       <PageHeader titleKey="optimizationCenter" />
-      <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-medium text-green-600 dark:text-green-400" dir="ltr">
+      <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-medium text-green-600 dark:text-green-400">
         {t("totalPotentialSavings", { amount: formatCurrency(totalSavings) })}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

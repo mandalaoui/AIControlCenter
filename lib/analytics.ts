@@ -302,11 +302,14 @@ export function detectAnomalies(
     const [teamName, week] = key.split("|") as [Team, string];
     const baseline = teamBaselines.get(teamName) ?? 0;
     if (baseline > 0 && spend >= baseline * 2.5) {
+      const ratio = `${roundPercent((spend / baseline) * 100) / 100}x`;
       anomalies.push({
+        id: "team-spend-spike",
         description: `${teamName} API spend spiked during week ${week}, driven by high-volume premium model calls`,
-        magnitude: `${roundPercent((spend / baseline) * 100) / 100}x above baseline`,
+        magnitude: `${ratio} above baseline`,
         affectedEntity: teamName,
         week,
+        params: { team: teamName, week, ratio },
       });
     }
   }
@@ -314,11 +317,21 @@ export function detectAnomalies(
   for (const tool of byTool) {
     if (tool.totalSeats > 0 && tool.seatUtilization < 0.3) {
       const inactive = tool.totalSeats - tool.activeSeats;
+      const utilization = roundPercent(tool.seatUtilization * 100);
+      const inactivePercent = roundPercent((1 - tool.seatUtilization) * 100);
       anomalies.push({
-        description: `${tool.name} has ${roundPercent(tool.seatUtilization * 100)}% seat utilization — ${inactive} of ${tool.totalSeats} configured seats show limited activity`,
-        magnitude: `${roundPercent((1 - tool.seatUtilization) * 100)}% seats inactive`,
+        id: "low-seat-utilization",
+        description: `${tool.name} has ${utilization}% seat utilization — ${inactive} of ${tool.totalSeats} configured seats show limited activity`,
+        magnitude: `${inactivePercent}% seats inactive`,
         affectedEntity: tool.name,
         week: getIsoWeek(logs[logs.length - 1]?.date ?? new Date().toISOString()),
+        params: {
+          tool: tool.name,
+          utilization,
+          inactive,
+          totalSeats: tool.totalSeats,
+          inactivePercent,
+        },
       });
     }
   }
@@ -326,20 +339,25 @@ export function detectAnomalies(
   const lowestRoiTeam = [...byTeam].sort((a, b) => a.roi - b.roi)[0];
   if (lowestRoiTeam && lowestRoiTeam.roi < 100) {
     anomalies.push({
+      id: "low-team-roi",
       description: `${lowestRoiTeam.name} ROI is ${lowestRoiTeam.roi}% — spend is high relative to hours saved`,
       magnitude: "Lowest team ROI",
       affectedEntity: lowestRoiTeam.name,
       week: getIsoWeek(logs[logs.length - 1]?.date ?? new Date().toISOString()),
+      params: { team: lowestRoiTeam.name, roi: lowestRoiTeam.roi },
     });
   }
 
   const opus = byModel.find((model) => model.name === "Claude Opus");
   if (opus && opus.mismatchRate > 0.3) {
+    const mismatch = roundPercent(opus.mismatchRate * 100);
     anomalies.push({
-      description: `Claude Opus mismatch rate at ${roundPercent(opus.mismatchRate * 100)}% — many Engineering calls use Opus on low-complexity tasks`,
-      magnitude: `${roundPercent(opus.mismatchRate * 100)}% mismatch rate`,
+      id: "opus-mismatch",
+      description: `Claude Opus mismatch rate at ${mismatch}% — many Engineering calls use Opus on low-complexity tasks`,
+      magnitude: `${mismatch}% mismatch rate`,
       affectedEntity: "Claude Opus",
       week: getIsoWeek(logs[logs.length - 1]?.date ?? new Date().toISOString()),
+      params: { mismatch },
     });
   }
 
@@ -429,48 +447,63 @@ export function getOptimizationRecommendations(
   if (cursor && cursor.totalSeats > 0) {
     const unused = cursor.totalSeats - cursor.activeSeats;
     if (unused >= 10) {
+      const seatsToReduce = Math.min(12, unused);
+      const cursorUtil = roundPercent(cursor.seatUtilization * 100);
       recommendations.push({
         id: "rec-cursor-seats",
         title: "Reclaim inactive Cursor seats",
-        description: `Reduce Cursor licenses by ${Math.min(12, unused)} seats where developers show no usage in the last 30 days.`,
-        evidence: `${unused} of ${cursor.totalSeats} Cursor seats are inactive (${roundPercent(cursor.seatUtilization * 100)}% utilization).`,
+        description: `Reduce Cursor licenses by ${seatsToReduce} seats where developers show no usage in the last 30 days.`,
+        evidence: `${unused} of ${cursor.totalSeats} Cursor seats are inactive (${cursorUtil}% utilization).`,
         riskLevel: "low",
         confidence: 0.92,
         estimatedMonthlySavings: roundMoney(unused * (SEAT_MONTHLY_COST.Cursor ?? 32)),
         category: "seat-reduction",
+        i18nParams: {
+          seats: seatsToReduce,
+          unused,
+          totalSeats: cursor.totalSeats,
+          utilization: cursorUtil,
+        },
       });
     }
   }
 
   const slack = data.byTool.find((tool) => tool.name === "Slack AI");
   if (slack && slack.seatUtilization < 0.3) {
+    const slackUtil = roundPercent(slack.seatUtilization * 100);
     recommendations.push({
       id: "rec-slack-seats",
       title: "Right-size Slack AI licenses",
       description:
         "Audit Slack AI seat assignments and remove licenses for teams with zero activity.",
-      evidence: `Slack AI seat utilization is ${roundPercent(slack.seatUtilization * 100)}% across ${slack.totalSeats} configured seats.`,
+      evidence: `Slack AI seat utilization is ${slackUtil}% across ${slack.totalSeats} configured seats.`,
       riskLevel: "low",
       confidence: 0.88,
       estimatedMonthlySavings: roundMoney(
         (slack.totalSeats - slack.activeSeats) * (SEAT_MONTHLY_COST["Slack AI"] ?? 12),
       ),
       category: "seat-reduction",
+      i18nParams: {
+        utilization: slackUtil,
+        totalSeats: slack.totalSeats,
+      },
     });
   }
 
   const opus = data.byModel.find((model) => model.name === "Claude Opus");
   if (opus && opus.mismatchRate > 0.25) {
+    const opusMismatch = roundPercent(opus.mismatchRate * 100);
     recommendations.push({
       id: "rec-opus-downgrade",
       title: "Downgrade low-complexity Claude Opus usage",
       description:
         "Route complexity scores below 4 to Claude Sonnet or Haiku instead of Claude Opus.",
-      evidence: `${roundPercent(opus.mismatchRate * 100)}% of Claude Opus calls are model-task mismatches.`,
+      evidence: `${opusMismatch}% of Claude Opus calls are model-task mismatches.`,
       riskLevel: "medium",
       confidence: 0.85,
       estimatedMonthlySavings: roundMoney(opus.spend * 0.35),
       category: "model-switch",
+      i18nParams: { mismatch: opusMismatch },
     });
   }
 
@@ -486,6 +519,10 @@ export function getOptimizationRecommendations(
       confidence: 0.8,
       estimatedMonthlySavings: roundMoney(marketing.spend * 0.15),
       category: "workflow",
+      i18nParams: {
+        roi: marketing.roi,
+        spend: `$${marketing.spend.toLocaleString()}`,
+      },
     });
   }
 
@@ -500,6 +537,10 @@ export function getOptimizationRecommendations(
       confidence: 0.7,
       estimatedMonthlySavings: roundMoney(data.kpis.costSavingsOpportunity * 0.1),
       category: "tool-consolidation",
+      i18nParams: {
+        orgRoi: data.kpis.totalROI,
+        activeUsers: data.kpis.activeUsers,
+      },
     });
   }
 

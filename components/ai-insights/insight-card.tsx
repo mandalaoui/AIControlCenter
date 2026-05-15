@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 
 import { DashboardCard } from "@/components/dashboard-card";
 import { Badge } from "@/components/ui/badge";
+import { localizeInsight } from "@/lib/i18n/localize-content";
+import { translateEntity } from "@/lib/i18n/labels";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AIInsight, AIInsightSeverity } from "@/lib/types";
@@ -21,10 +23,11 @@ interface InsightCardProps {
 
 export function InsightCard({ insight }: InsightCardProps) {
   const { t } = useTranslation("common");
+  const localized = localizeInsight(insight, t);
 
   return (
     <DashboardCard
-      title={insight.title}
+      title={localized.title}
       badge={
         <Badge
           variant="outline"
@@ -34,14 +37,16 @@ export function InsightCard({ insight }: InsightCardProps) {
         </Badge>
       }
     >
-      <p className="mb-3 text-sm text-muted-foreground">{insight.description}</p>
+      <p className="mb-3 text-sm text-muted-foreground">{localized.description}</p>
       <div className="mb-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-        <span>{t("affectedEntity")}: {insight.affectedEntity}</span>
-        <span dir="ltr">
+        <span>
+          {t("affectedEntity")}: {translateEntity(localized.affectedEntity, t)}
+        </span>
+        <span>
           {t("confidence")}: {Math.round(insight.confidence * 100)}%
         </span>
         {insight.estimatedSavings !== undefined ? (
-          <span dir="ltr">
+          <span>
             {t("potentialSavings")}: {formatCurrency(insight.estimatedSavings)}
           </span>
         ) : null}
@@ -49,7 +54,7 @@ export function InsightCard({ insight }: InsightCardProps) {
       <div className="flex items-start gap-2 rounded-md border border-s-2 border-s-blue-500 bg-muted/50 p-3">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" aria-hidden />
         <p className="text-sm italic text-muted-foreground">
-          {insight.recommendedAction}
+          {localized.recommendedAction}
         </p>
       </div>
     </DashboardCard>

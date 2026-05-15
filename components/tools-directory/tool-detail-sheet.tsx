@@ -11,6 +11,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { translateTool } from "@/lib/i18n/labels";
+import { localizeToolContent } from "@/lib/i18n/localize-content";
 import { formatCurrency, formatPercentChange, formatRoiDisplay } from "@/lib/format";
 import type { AITool } from "@/lib/types";
 
@@ -18,14 +20,12 @@ interface ToolDetailSheetProps {
   tool: AITool | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  sheetSide: "left" | "right";
 }
 
 export function ToolDetailSheet({
   tool,
   open,
   onOpenChange,
-  sheetSide,
 }: ToolDetailSheetProps) {
   const { t } = useTranslation("common");
 
@@ -33,25 +33,27 @@ export function ToolDetailSheet({
     return null;
   }
 
+  const localized = localizeToolContent(tool, t);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side={sheetSide} className="w-full overflow-y-auto sm:max-w-2xl">
+      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
         <SheetHeader>
-          <SheetTitle>{tool.name}</SheetTitle>
+          <SheetTitle>{translateTool(tool.name, t)}</SheetTitle>
           <SheetDescription>
             {tool.provider} · {t(`toolCategories.${tool.category}`)}
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-6 px-4 pb-8">
-          <p className="text-sm text-muted-foreground">{tool.description}</p>
+          <p className="text-sm text-muted-foreground">{localized.description}</p>
 
           <section>
             <h4 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">
               {t("strengths")}
             </h4>
             <ul className="list-inside list-disc space-y-1 text-sm">
-              {tool.strengths.map((item) => (
+              {localized.strengths.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -62,7 +64,7 @@ export function ToolDetailSheet({
               {t("limitations")}
             </h4>
             <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-              {tool.limitations.map((item) => (
+              {localized.limitations.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -72,7 +74,7 @@ export function ToolDetailSheet({
             <h4 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">
               {t("modelComparison")}
             </h4>
-            <ToolModelTable models={tool.models} />
+            <ToolModelTable models={localized.models} />
           </section>
 
           <section>
@@ -80,7 +82,7 @@ export function ToolDetailSheet({
               {t("pricingPlansDetail")}
             </h4>
             <div className="space-y-3">
-              {tool.pricing.map((plan) => (
+              {localized.pricing.map((plan) => (
                 <div key={plan.name} className="rounded-md border border-border p-3">
                   <p className="font-medium">{plan.name}</p>
                   <p className="text-sm text-muted-foreground">
@@ -114,7 +116,7 @@ export function ToolDetailSheet({
               {t("antiPatterns")}
             </h4>
             <ul className="list-inside list-disc space-y-1 text-sm text-red-500">
-              {tool.notRecommendedFor.map((item) => (
+              {localized.notRecommendedFor.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -125,7 +127,7 @@ export function ToolDetailSheet({
               <h4 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
                 {t("orgUsageStats")}
               </h4>
-              <dl className="grid grid-cols-2 gap-3 text-sm" dir="ltr">
+              <dl className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <dt className="text-muted-foreground">{t("orgSpend")}</dt>
                   <dd className="font-semibold">{formatCurrency(tool.orgSpend)}</dd>

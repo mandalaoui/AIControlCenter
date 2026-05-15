@@ -1,3 +1,5 @@
+import { getIntlLocale } from "@/lib/i18n/format-locale";
+
 function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -11,7 +13,8 @@ function roundScore(value: number): number {
 }
 
 export function formatCurrency(value: number): string {
-  return `$${roundMoney(value).toLocaleString("en-US", {
+  const rounded = roundMoney(value);
+  return `$${rounded.toLocaleString(getIntlLocale(), {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })}`;
@@ -25,7 +28,7 @@ export function formatRoiDisplay(roi: number): string {
 }
 
 export function formatNumber(value: number, decimals = 0): string {
-  return value.toLocaleString("en-US", {
+  return value.toLocaleString(getIntlLocale(), {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });

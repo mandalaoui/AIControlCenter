@@ -11,7 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatRoiDisplay } from "@/lib/format";
+import { translateTool } from "@/lib/i18n/labels";
+import { formatCurrency, formatNumber, formatRoiDisplay } from "@/lib/format";
 import type { ToolComparisonRow } from "@/lib/types";
 
 interface ToolComparisonTableProps {
@@ -38,25 +39,27 @@ export function ToolComparisonTable({ rows }: ToolComparisonTableProps) {
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.name}>
-              <TableCell className="font-medium">{row.name}</TableCell>
-              <TableCell className="text-end font-mono" dir="ltr">
+              <TableCell className="font-medium">
+                {translateTool(row.name, t)}
+              </TableCell>
+              <TableCell className="text-end font-mono">
                 {formatCurrency(row.spend)}
               </TableCell>
-              <TableCell className="text-end" dir="ltr">
+              <TableCell className="text-end">
                 {formatRoiDisplay(row.roi)}
               </TableCell>
-              <TableCell className="text-end" dir="ltr">
+              <TableCell className="text-end">
                 {row.totalSeats > 0
                   ? `${Math.round(row.seatUtilization * 100)}%`
                   : "—"}
               </TableCell>
-              <TableCell className="text-end" dir="ltr">
-                {row.requests.toLocaleString("en-US")}
+              <TableCell className="text-end">
+                {formatNumber(row.requests)}
               </TableCell>
-              <TableCell className="text-end" dir="ltr">
-                {row.hoursSaved.toLocaleString("en-US")}
+              <TableCell className="text-end">
+                {formatNumber(row.hoursSaved)}
               </TableCell>
-              <TableCell className="text-end font-mono" dir="ltr">
+              <TableCell className="text-end font-mono">
                 {formatCurrency(row.cpt)}
               </TableCell>
             </TableRow>

@@ -48,7 +48,7 @@ export function ToolDirectoryFilters({
           {t("searchTools")}
         </label>
         <div className="relative">
-          <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={filters.search}
             onChange={(event) =>

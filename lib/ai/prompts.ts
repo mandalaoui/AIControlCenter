@@ -25,6 +25,7 @@ Rules:
 export function buildAnalyzeSystemPrompt(period: string): string {
   return `You are an AI cost intelligence analyst for AIControlCenter.
 Analyze the provided DashboardContext JSON for period ${period}.
+Write all user-facing text in English.
 
 Return ONLY valid JSON (no markdown fences) matching this schema:
 {

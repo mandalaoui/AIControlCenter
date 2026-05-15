@@ -161,9 +161,10 @@ function buildKpiInsight(
         insightKey: "kpiInsights.totalSpend",
         insightParams: {
           spend: formatCurrency(kpis.totalSpend),
-          detail:
-            anomalies[0]?.description ??
-            `Period total across ${byTool.length} connected tools.`,
+          toolCount: byTool.length,
+          ...(anomalies[0]
+            ? { anomalyId: anomalies[0].id, anomalyParams: anomalies[0].params }
+            : {}),
         },
       };
     case "roi":

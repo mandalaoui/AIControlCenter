@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, ChevronDown, Languages, Moon, Search, Sun } from "lucide-react";
+import { Bell, ChevronDown, Moon, Search, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { useLanguage, useToggleLanguage } from "@/components/i18n-provider";
 
 const workspaces = [
   { value: "acme", labelKey: "acmeCorp" },
@@ -26,8 +25,6 @@ const dateRanges = [
 export function TopBar() {
   const { t } = useTranslation("common");
   const { theme, setTheme } = useTheme();
-  const toggleLanguage = useToggleLanguage();
-  const { language } = useLanguage();
   const [workspace, setWorkspace] = useState("acme");
   const [dateRange, setDateRange] = useState("30d");
 
@@ -47,11 +44,11 @@ export function TopBar() {
               </option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <ChevronDown className="pointer-events-none absolute inset-e-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
         <div className="relative max-w-md flex-1">
-          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             placeholder={t("search")}
@@ -72,21 +69,11 @@ export function TopBar() {
               </option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <ChevronDown className="pointer-events-none absolute inset-e-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleLanguage}
-          title={t("toggleLanguage")}
-        >
-          <Languages className="size-5" />
-          <span className="text-xs font-medium uppercase">{language}</span>
-        </Button>
-
         <Button
           variant="ghost"
           size="icon"
@@ -107,7 +94,7 @@ export function TopBar() {
         <Separator orientation="vertical" className="mx-2 h-6" />
 
         <div className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-          JD
+          OM
         </div>
       </div>
     </header>

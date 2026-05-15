@@ -14,6 +14,9 @@ import {
   buildDashboardContext,
   computeAnalyticsData,
 } from "@/lib/analytics";
+import { formatCurrency, formatNumber } from "@/lib/format";
+import { getServerT } from "@/lib/i18n/server";
+import { translateTeam, translateTool } from "@/lib/i18n/labels";
 import type { QueryMessage } from "@/lib/types";
 
 interface QueryRequestBody {
@@ -22,6 +25,7 @@ interface QueryRequestBody {
 }
 
 function buildFallbackAnswer(question: string): string {
+  const t = getServerT();
   const analytics = computeAnalyticsData();
   const context = buildDashboardContext(analytics);
   const q = question.toLowerCase();
@@ -29,33 +33,65 @@ function buildFallbackAnswer(question: string): string {
   if (q.includes("overspent") || q.includes("team")) {
     const top = [...context.byTeam].sort((a, b) => b.spend - a.spend)[0];
     const low = [...context.byTeam].sort((a, b) => a.roi - b.roi)[0];
-    return `Engineering has the highest spend at $${top?.spend.toLocaleString() ?? "0"} with ${top?.roi ?? 0}% ROI. ${low?.name ?? "Marketing"} has the lowest ROI at ${low?.roi ?? 0}% — review model selection and training there first.`;
+    return t("fallbackQuery.teamOverspend", {
+      spend: formatCurrency(top?.spend ?? 0),
+      roi: top?.roi ?? 0,
+      lowTeam: translateTeam(low?.name ?? "Marketing", t),
+      lowRoi: low?.roi ?? 0,
+    });
   }
   if (q.includes("lowest roi") || q.includes("worst")) {
     const low = [...context.byTool].sort((a, b) => a.roi - b.roi)[0];
-    return `${low?.name ?? "Slack AI"} has the lowest tool ROI at ${low?.roi ?? 0}% with ${Math.round((low?.seatUtilization ?? 0) * 100)}% seat utilization. Consider right-sizing licenses before expanding other tools.`;
+    return t("fallbackQuery.lowestRoi", {
+      tool: translateTool(low?.name ?? "Slack AI", t),
+      roi: low?.roi ?? 0,
+      utilization: Math.round((low?.seatUtilization ?? 0) * 100),
+    });
   }
   if (q.includes("cut") || q.includes("savings") || q.includes("reduce")) {
-    return `Top safe savings: reclaim underused seats ($${context.byTool.reduce((sum, t) => sum + (t.totalSeats > 0 ? Math.max(0, t.totalSeats - t.activeSeats) * 20 : 0), 0).toLocaleString()}/mo est.), downgrade Claude Opus on low-complexity tasks, and improve Marketing workflows. Total identified opportunity: $${analytics.kpis.costSavingsOpportunity.toLocaleString()}/month.`;
+    const seatSavings = context.byTool.reduce(
+      (sum, tool) =>
+        sum +
+        (tool.totalSeats > 0
+          ? Math.max(0, tool.totalSeats - tool.activeSeats) * 20
+          : 0),
+      0,
+    );
+    return t("fallbackQuery.savings", {
+      seatSavings: formatCurrency(seatSavings),
+      totalSavings: formatCurrency(analytics.kpis.costSavingsOpportunity),
+    });
   }
   if (q.includes("spike") || q.includes("anomal")) {
     const anomaly = context.anomalies[0];
-    return anomaly
-      ? `${anomaly.description} Magnitude: ${anomaly.magnitude}. Affected: ${anomaly.affectedEntity} (${anomaly.week}).`
-      : "No major anomalies detected in the current period data.";
+    if (!anomaly) {
+      return t("fallbackQuery.noAnomaly");
+    }
+    return t("fallbackQuery.spike", {
+      description: anomaly.description,
+      magnitude: anomaly.magnitude,
+      entity: anomaly.affectedEntity,
+      week: anomaly.week,
+    });
   }
 
-  return `Total AI spend is $${context.totalSpend.toLocaleString()} with ${context.totalROI}% ROI, ${context.hoursSaved.toLocaleString()} hours saved, and ${context.underusedSeats} underused seats. Ask about a specific team, tool, or user for a deeper answer.`;
+  return t("fallbackQuery.default", {
+    spend: formatCurrency(context.totalSpend),
+    roi: context.totalROI,
+    hoursSaved: formatNumber(context.hoursSaved, 0),
+    underusedSeats: context.underusedSeats,
+  });
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as QueryRequestBody;
     const question = body.question?.trim();
+    const t = getServerT();
 
     if (!question) {
       return NextResponse.json(
-        { error: "question is required" },
+        { error: t("apiErrors.questionRequired") },
         { status: 400 },
       );
     }
@@ -74,14 +110,19 @@ export async function POST(request: Request) {
         const answer = await queryWithClaude(context, question, historyPrefix);
         return NextResponse.json({ answer });
       } catch {
-        return NextResponse.json({ answer: buildFallbackAnswer(question) });
+        return NextResponse.json({
+          answer: buildFallbackAnswer(question),
+        });
       }
     }
 
-    return NextResponse.json({ answer: buildFallbackAnswer(question) });
+    return NextResponse.json({
+      answer: buildFallbackAnswer(question),
+    });
   } catch (error) {
+    const t = getServerT();
     const message =
-      error instanceof Error ? error.message : "Query request failed";
+      error instanceof Error ? error.message : t("apiErrors.queryFailed");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

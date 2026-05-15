@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { AiNewsResponse } from "@/lib/types";
 
@@ -12,6 +13,7 @@ interface UseAiNewsResult {
 }
 
 export function useAiNews(): UseAiNewsResult {
+  const { t } = useTranslation("common");
   const [data, setData] = useState<AiNewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,8 @@ export function useAiNews(): UseAiNewsResult {
     setLoading(true);
     setError(null);
     try {
-      const url = forceRefresh ? "/api/ai-news?refresh=true" : "/api/ai-news";
+      const base = "/api/ai-news";
+      const url = forceRefresh ? `${base}?refresh=true` : base;
       const response = await fetch(url);
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as {
@@ -36,16 +39,16 @@ export function useAiNews(): UseAiNewsResult {
           });
           return;
         }
-        throw new Error(payload.error ?? "Failed to load news");
+        throw new Error(payload.error ?? t("loadFailedNews"));
       }
       const payload = (await response.json()) as AiNewsResponse;
       setData(payload);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load news");
+      setError(err instanceof Error ? err.message : t("loadFailedNews"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void fetchNews(false);

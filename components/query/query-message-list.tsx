@@ -27,7 +27,7 @@ export function QueryMessageList({
           key={`${message.role}-${index}`}
           className={cn(
             "flex gap-3",
-            message.role === "user" && "justify-end",
+            message.role === "user" ? "justify-end" : "justify-start",
           )}
         >
           {message.role === "assistant" ? (
@@ -37,7 +37,7 @@ export function QueryMessageList({
           ) : null}
           <div
             className={cn(
-              "max-w-[80%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-line",
+              "max-w-[80%] rounded-lg px-3 py-2 text-start text-sm leading-relaxed whitespace-pre-line",
               message.role === "user"
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-foreground",

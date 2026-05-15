@@ -6,6 +6,7 @@ import {
   buildDashboardContext,
   computeAnalyticsData,
 } from "@/lib/analytics";
+import { getServerT } from "@/lib/i18n/server";
 import type { DashboardContext } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -35,8 +36,9 @@ export async function POST(request: Request) {
     const analytics = computeAnalyticsData();
     return NextResponse.json(buildFallbackAnalyzeResponse(analytics));
   } catch (error) {
+    const t = getServerT();
     const message =
-      error instanceof Error ? error.message : "Analyze request failed";
+      error instanceof Error ? error.message : t("apiErrors.analyzeFailed");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

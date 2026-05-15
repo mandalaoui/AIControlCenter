@@ -9,12 +9,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { getChartMargin } from "@/lib/i18n/chart-layout";
 import { formatCurrency } from "@/lib/format";
 import type { CostBreakdownRow } from "@/lib/types";
-
-const chartConfig = {
-  spend: { label: "Spend", color: "var(--chart-1)" },
-} satisfies ChartConfig;
 
 interface CostBreakdownChartProps {
   rows: CostBreakdownRow[];
@@ -22,6 +19,9 @@ interface CostBreakdownChartProps {
 
 export function CostBreakdownChart({ rows }: CostBreakdownChartProps) {
   const { t } = useTranslation("common");
+  const chartConfig = {
+    spend: { label: t("spend"), color: "var(--chart-1)" },
+  } satisfies ChartConfig;
 
   if (rows.length === 0) {
     return (
@@ -33,7 +33,7 @@ export function CostBreakdownChart({ rows }: CostBreakdownChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="aspect-auto h-[280px] w-full">
-      <BarChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <BarChart data={rows} margin={getChartMargin({ yAxis: 56 })}>
         <CartesianGrid vertical={false} strokeDasharray="3 3" />
         <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
         <YAxis tickLine={false} axisLine={false} width={56} />

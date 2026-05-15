@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { buildFallbackNewsResponse } from "@/lib/ai/fallback-news";
 import { clearNewsCache, getCachedNews, setCachedNews } from "@/lib/ai/news-cache";
 import { fetchAiNews } from "@/lib/ai/news-client";
+import { getServerT } from "@/lib/i18n/server";
 import type { AiNewsResponse } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -34,10 +35,14 @@ export async function GET(request: Request) {
       return NextResponse.json(cached);
     }
 
+    const t = getServerT();
     const message =
-      error instanceof Error ? error.message : "AI news request failed";
+      error instanceof Error ? error.message : t("apiErrors.newsFailed");
     return NextResponse.json(
-      { error: message, ...buildFallbackNewsResponse() },
+      {
+        error: message,
+        ...buildFallbackNewsResponse(),
+      },
       { status: 200 },
     );
   }

@@ -4,33 +4,36 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
 import enCommon from "@/locales/en/common.json";
-import heCommon from "@/locales/he/common.json";
+import enExtras from "@/locales/en/i18n-extras.json";
+
+function mergeLocale<T extends Record<string, unknown>>(
+  base: T,
+  extras: Record<string, unknown>,
+): T {
+  return { ...base, ...extras };
+}
 import {
   defaultLanguage,
   defaultNS,
   fallbackLng,
-  type Language,
 } from "@/lib/i18n/settings";
 
 const resources = {
-  en: { common: enCommon },
-  he: { common: heCommon },
+  en: { common: mergeLocale(enCommon, enExtras) },
 } as const;
 
 let initialized = false;
 
-export function initI18n(language: Language = defaultLanguage): typeof i18n {
+export function initI18n(): typeof i18n {
   if (!initialized) {
     void i18n.use(initReactI18next).init({
       resources,
-      lng: language,
+      lng: defaultLanguage,
       fallbackLng,
       defaultNS,
       interpolation: { escapeValue: false },
     });
     initialized = true;
-  } else if (i18n.language !== language) {
-    void i18n.changeLanguage(language);
   }
   return i18n;
 }

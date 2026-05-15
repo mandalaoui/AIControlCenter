@@ -12,6 +12,15 @@ interface NewsItemCardProps {
 
 export function NewsItemCard({ item }: NewsItemCardProps) {
   const { t } = useTranslation("common");
+  const title =
+    item.id.startsWith("fb-") && t(`fallbackNews.${item.id}.title`) !== `fallbackNews.${item.id}.title`
+      ? t(`fallbackNews.${item.id}.title`)
+      : item.title;
+  const summary =
+    item.id.startsWith("fb-") &&
+    t(`fallbackNews.${item.id}.summary`) !== `fallbackNews.${item.id}.summary`
+      ? t(`fallbackNews.${item.id}.summary`)
+      : item.summary;
 
   return (
     <article className="flex flex-col rounded-lg border border-border bg-card p-5">
@@ -19,8 +28,8 @@ export function NewsItemCard({ item }: NewsItemCardProps) {
         <Badge variant="outline">{item.source}</Badge>
         <Badge variant="secondary">{t(`newsTabs.${item.category}`)}</Badge>
       </div>
-      <h3 className="mb-2 text-base font-semibold text-foreground">{item.title}</h3>
-      <p className="mb-4 flex-1 text-sm text-muted-foreground">{item.summary}</p>
+      <h3 className="mb-2 text-base font-semibold text-foreground">{title}</h3>
+      <p className="mb-4 flex-1 text-sm text-muted-foreground">{summary}</p>
       <a
         href={item.url}
         target="_blank"

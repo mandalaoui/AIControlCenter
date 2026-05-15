@@ -11,7 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatRoiDisplay } from "@/lib/format";
+import { translateModel } from "@/lib/i18n/labels";
+import { formatCurrency, formatNumber, formatRoiDisplay } from "@/lib/format";
 import type { ModelUsageRow } from "@/lib/types";
 
 interface ModelUsageTableProps {
@@ -36,17 +37,19 @@ export function ModelUsageTable({ rows }: ModelUsageTableProps) {
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.name}>
-              <TableCell className="font-medium">{row.name}</TableCell>
-              <TableCell className="text-end font-mono" dir="ltr">
+              <TableCell className="font-medium">
+                {translateModel(row.name, t)}
+              </TableCell>
+              <TableCell className="text-end font-mono">
                 {formatCurrency(row.spend)}
               </TableCell>
-              <TableCell className="text-end" dir="ltr">
-                {row.requests.toLocaleString("en-US")}
+              <TableCell className="text-end">
+                {formatNumber(row.requests)}
               </TableCell>
-              <TableCell className="text-end" dir="ltr">
+              <TableCell className="text-end">
                 {Math.round(row.mismatchRate * 100)}%
               </TableCell>
-              <TableCell className="text-end" dir="ltr">
+              <TableCell className="text-end">
                 {formatRoiDisplay(row.roi)}
               </TableCell>
             </TableRow>

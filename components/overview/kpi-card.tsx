@@ -59,7 +59,7 @@ export function KpiCard({ kpi }: KpiCardProps) {
         <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
           {t(KPI_TITLE_KEYS[kpi.id])}
         </h3>
-        <div className="h-12 w-24 shrink-0" dir="ltr">
+        <div className="h-12 w-24 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <Line
@@ -74,7 +74,7 @@ export function KpiCard({ kpi }: KpiCardProps) {
         </div>
       </div>
 
-      <p className="text-3xl font-bold text-foreground" dir="ltr">
+      <p className="text-3xl font-bold text-foreground">
         {formatKpiValue(kpi)}
       </p>
 
@@ -84,7 +84,7 @@ export function KpiCard({ kpi }: KpiCardProps) {
         ) : (
           <TrendingDown className={cn("h-4 w-4", trendColor)} aria-hidden />
         )}
-        <span className={cn("text-sm font-medium", trendColor)} dir="ltr">
+        <span className={cn("text-sm font-medium", trendColor)}>
           {formatPercentChange(kpi.changePercent)}
         </span>
         <span className="text-xs text-muted-foreground">

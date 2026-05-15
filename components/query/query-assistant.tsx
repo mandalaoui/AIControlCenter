@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Send, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -19,12 +19,14 @@ const SUGGESTED_KEYS = [
 
 export function QueryAssistant() {
   const { t } = useTranslation("common");
-  const [messages, setMessages] = useState<QueryMessage[]>([
-    { role: "assistant", content: t("queryWelcome") },
-  ]);
+  const [messages, setMessages] = useState<QueryMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMessages([{ role: "assistant", content: t("queryWelcome") }]);
+  }, [t]);
 
   const sendMessage = async (text: string) => {
     const question = text.trim();

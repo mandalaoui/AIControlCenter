@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { AnalyzeResponse } from "@/lib/types";
 
@@ -12,6 +13,7 @@ interface UseAnalyzeResult {
 }
 
 export function useAnalyze(): UseAnalyzeResult {
+  const { t } = useTranslation("common");
   const [data, setData] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,16 +31,18 @@ export function useAnalyze(): UseAnalyzeResult {
         const payload = (await response.json().catch(() => ({}))) as {
           error?: string;
         };
-        throw new Error(payload.error ?? "Failed to load analysis");
+        throw new Error(payload.error ?? t("loadFailedAnalysis"));
       }
       const payload = (await response.json()) as AnalyzeResponse;
       setData(payload);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load analysis");
+      setError(
+        err instanceof Error ? err.message : t("loadFailedAnalysis"),
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void fetchAnalyze();

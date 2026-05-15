@@ -1,0 +1,186 @@
+{
+  "close": "Close",
+  "perMonthShort": "mo",
+  "apiErrors": {
+    "questionRequired": "question is required",
+    "queryFailed": "Query request failed",
+    "analyzeFailed": "Analyze request failed",
+    "newsFailed": "AI news request failed"
+  },
+  "conversation": {
+    "user": "User",
+    "assistant": "Assistant"
+  },
+  "entities": {
+    "teams": {
+      "Engineering": "Engineering",
+      "Marketing": "Marketing",
+      "Product": "Product",
+      "Sales": "Sales",
+      "Customer Success": "Customer Success",
+      "Operations": "Operations"
+    },
+    "tools": {
+      "OpenAI API": "OpenAI API",
+      "Anthropic API": "Anthropic API",
+      "GitHub Copilot": "GitHub Copilot",
+      "Cursor": "Cursor",
+      "Microsoft Copilot": "Microsoft Copilot",
+      "Slack AI": "Slack AI",
+      "Google Gemini": "Google Gemini",
+      "Internal Agent": "Internal Agent"
+    },
+    "users": {
+      "Rachel Green": "Rachel Green",
+      "John Smith": "John Smith",
+      "Emma Wilson": "Emma Wilson",
+      "Alex Johnson": "Alex Johnson",
+      "James Martinez": "James Martinez",
+      "Mike Torres": "Mike Torres",
+      "James Liu": "James Liu",
+      "David Kim": "David Kim",
+      "Tom Richards": "Tom Richards",
+      "Olivia Taylor": "Olivia Taylor",
+      "Lisa Anderson": "Lisa Anderson",
+      "Priya Patel": "Priya Patel",
+      "Kevin Zhang": "Kevin Zhang",
+      "Ben Carter": "Ben Carter",
+      "Anna Novak": "Anna Novak",
+      "Chris Park": "Chris Park",
+      "Daniel Lee": "Daniel Lee",
+      "Emily Davis": "Emily Davis",
+      "Marcus Webb": "Marcus Webb",
+      "Maria Lopez": "Maria Lopez",
+      "Nina Brown": "Nina Brown",
+      "Paul Wilson": "Paul Wilson",
+      "Sarah Chen": "Sarah Chen",
+      "Sophie Miller": "Sophie Miller"
+    },
+    "models": {
+      "GPT-4": "GPT-4",
+      "GPT-4o": "GPT-4o",
+      "GPT-4o-mini": "GPT-4o-mini",
+      "GPT-3.5": "GPT-3.5",
+      "Claude Opus": "Claude Opus",
+      "Claude Sonnet": "Claude Sonnet",
+      "Claude Haiku": "Claude Haiku",
+      "Gemini Pro": "Gemini Pro",
+      "Gemini Ultra": "Gemini Ultra",
+      "Gemini Flash": "Gemini Flash"
+    }
+  },
+  "anomalies": {
+    "team-spend-spike": {
+      "description": "{{team}} API spend spiked during week {{week}}, driven by high-volume premium model calls",
+      "magnitude": "{{ratio}} above baseline"
+    },
+    "low-seat-utilization": {
+      "description": "{{tool}} has {{utilization}}% seat utilization — {{inactive}} of {{totalSeats}} configured seats show limited activity",
+      "magnitude": "{{inactivePercent}}% seats inactive"
+    },
+    "low-team-roi": {
+      "description": "{{team}} ROI is {{roi}}% — spend is high relative to hours saved",
+      "magnitude": "Lowest team ROI"
+    },
+    "opus-mismatch": {
+      "description": "Claude Opus mismatch rate at {{mismatch}}% — many Engineering calls use Opus on low-complexity tasks",
+      "magnitude": "{{mismatch}}% mismatch rate"
+    }
+  },
+  "recommendations": {
+    "rec-cursor-seats": {
+      "title": "Reclaim inactive Cursor seats",
+      "description": "Reduce Cursor licenses by {{seats}} seats where developers show no usage in the last 30 days.",
+      "evidence": "{{unused}} of {{totalSeats}} Cursor seats are inactive ({{utilization}}% utilization)."
+    },
+    "rec-slack-seats": {
+      "title": "Right-size Slack AI licenses",
+      "description": "Audit Slack AI seat assignments and remove licenses for teams with zero activity.",
+      "evidence": "Slack AI seat utilization is {{utilization}}% across {{totalSeats}} configured seats."
+    },
+    "rec-opus-downgrade": {
+      "title": "Downgrade low-complexity Claude Opus usage",
+      "description": "Route complexity scores below 4 to Claude Sonnet or Haiku instead of Claude Opus.",
+      "evidence": "{{mismatch}}% of Claude Opus calls are model-task mismatches."
+    },
+    "rec-marketing-workflow": {
+      "title": "Improve Marketing AI workflow efficiency",
+      "description": "Provide targeted AI training and standardize on lower-cost models for content generation tasks.",
+      "evidence": "Marketing ROI is {{roi}}% with {{spend}} monthly spend."
+    },
+    "rec-general-review": {
+      "title": "Continue monthly AI spend review",
+      "description": "No critical optimization flags detected. Maintain quarterly tool and model audits.",
+      "evidence": "Organization ROI is {{orgRoi}}% with {{activeUsers}} active users."
+    }
+  },
+  "fallbackInsights": {
+    "0": {
+      "title": "{{entity}}: {{magnitude}}",
+      "description": "{{description}}",
+      "action": "Investigate {{entity}} usage during week {{week}}."
+    },
+    "marketing": {
+      "title": "{{entity}} ROI below target",
+      "description": "{{entity}} ROI is {{roi}}% on {{spend}} spend with {{waste}}% waste ratio.",
+      "action": "Provide targeted AI training and standardize on lower-cost models for routine tasks."
+    },
+    "cursor": {
+      "title": "Cursor seat reclamation opportunity",
+      "description": "{{inactive}} of {{totalSeats}} Cursor seats show limited activity ({{utilization}}% utilization).",
+      "action": "Reclaim inactive licenses and reassign to active developers."
+    }
+  },
+  "fallbackAnalyze": {
+    "executiveSummary": "Organization AI spend is {{spend}} with {{roi}}% ROI and {{activeUsers}} active users in {{period}}. Top savings opportunity: {{savings}}/month from seat optimization and model routing. {{signals}} priority signals require attention this month."
+  },
+  "fallbackQuery": {
+    "teamOverspend": "Engineering has the highest spend at {{spend}} with {{roi}}% ROI. {{lowTeam}} has the lowest ROI at {{lowRoi}}% — review model selection and training there first.",
+    "lowestRoi": "{{tool}} has the lowest tool ROI at {{roi}}% with {{utilization}}% seat utilization. Consider right-sizing licenses before expanding other tools.",
+    "savings": "Top safe savings: reclaim underused seats (~{{seatSavings}}/mo est.), downgrade Claude Opus on low-complexity tasks, and improve Marketing workflows. Total identified opportunity: {{totalSavings}}/month.",
+    "spike": "{{description}} Magnitude: {{magnitude}}. Affected: {{entity}} ({{week}}).",
+    "noAnomaly": "No major anomalies detected in the current period data.",
+    "default": "Total AI spend is {{spend}} with {{roi}}% ROI, {{hoursSaved}} hours saved, and {{underusedSeats}} underused seats. Ask about a specific team, tool, or user for a deeper answer."
+  },
+  "fallbackNews": {
+    "fb-1": {
+      "title": "Anthropic releases Claude Sonnet 4 with improved coding benchmarks",
+      "summary": "Claude Sonnet 4 delivers stronger reasoning and code generation at mid-tier pricing, with a 200K context window across the Claude family."
+    },
+    "fb-2": {
+      "title": "OpenAI cuts GPT-4o-mini input pricing for high-volume workloads",
+      "summary": "OpenAI adjusted token pricing for GPT-4o-mini, making high-volume classification and summarization more cost-effective for enterprise automations."
+    },
+    "fb-3": {
+      "title": "GitHub Copilot expands agent mode for multi-file repository edits",
+      "summary": "Copilot's agent mode now supports broader repository context and task planning, positioning it closer to IDE-native autonomous coding assistants."
+    },
+    "fb-4": {
+      "title": "Enterprise AI spend governance becomes a board-level priority",
+      "summary": "CFOs and platform teams are adopting unified AI cost dashboards to align tool adoption with measurable ROI and seat utilization targets."
+    },
+    "fb-5": {
+      "title": "Google Gemini 2.5 Flash targets low-latency agent workflows",
+      "summary": "Gemini Flash emphasizes speed and cost for agentic pipelines, with competitive per-million-token rates for high-throughput applications."
+    },
+    "fb-6": {
+      "title": "Cursor introduces team analytics for seat utilization tracking",
+      "summary": "Cursor added organization-level usage visibility, helping engineering leaders identify inactive seats and optimize IDE AI subscriptions."
+    },
+    "fb-7": {
+      "title": "Microsoft 365 Copilot seat bundles shift to usage-based add-ons",
+      "summary": "Microsoft is piloting flexible Copilot licensing tied to active users rather than flat per-seat bundles for large enterprises."
+    },
+    "fb-8": {
+      "title": "Slack AI summarization expands to cross-channel workflow insights",
+      "summary": "Slack AI now surfaces channel-level productivity summaries, helping teams evaluate communication-tool ROI alongside dev tooling."
+    }
+  },
+  "kpiInsightsDetail": {
+    "periodTotal": "Period total across {{count}} connected tools."
+  },
+  "lowProductivity": {
+    "highCostLowHours": "high cost, low hours saved",
+    "lowSuccessRate": "low task success rate"
+  }
+}

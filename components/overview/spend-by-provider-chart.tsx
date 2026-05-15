@@ -78,7 +78,7 @@ export function SpendByProviderChart({ data }: SpendByProviderChartProps) {
           </PieChart>
         </ChartContainer>
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="text-center" dir="ltr">
+          <div className="text-center">
             <p className="text-xs font-medium text-muted-foreground">
               {t("total")}
             </p>

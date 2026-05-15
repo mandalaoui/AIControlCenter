@@ -134,10 +134,12 @@ export interface ModelSummary {
 }
 
 export interface AnomalySummary {
+  id?: string;
   description: string;
   magnitude: string;
   affectedEntity: string;
   week: string;
+  params?: Record<string, string | number>;
 }
 
 export interface UserSpendSummary {
@@ -182,6 +184,7 @@ export interface OptimizationRecommendation {
   confidence: number;
   estimatedMonthlySavings: number;
   category: "model-switch" | "seat-reduction" | "workflow" | "tool-consolidation";
+  i18nParams?: Record<string, string | number>;
 }
 
 export type AIInsightType = "anomaly" | "trend" | "recommendation" | "risk";
@@ -259,7 +262,7 @@ export interface KpiCardData {
   format: KpiValueFormat;
   lowerIsBetter: boolean;
   insightKey: string;
-  insightParams: Record<string, string | number>;
+  insightParams: Record<string, unknown>;
 }
 
 export interface RoiChartItem {
@@ -283,7 +286,7 @@ export interface SpendOverTimePoint {
 
 export interface ChartInsightData {
   insightKey: string;
-  insightParams: Record<string, string | number>;
+  insightParams: Record<string, unknown>;
 }
 
 export interface OverviewPageData {

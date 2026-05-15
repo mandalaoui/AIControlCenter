@@ -3,6 +3,8 @@
 import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
+import { translateTool } from "@/lib/i18n/labels";
+import { localizeToolContent } from "@/lib/i18n/localize-content";
 import { formatCurrency, formatRoiDisplay } from "@/lib/format";
 import type { AITool } from "@/lib/types";
 
@@ -13,8 +15,9 @@ interface ToolCardProps {
 
 export function ToolCard({ tool, onSelect }: ToolCardProps) {
   const { t } = useTranslation("common");
-  const topStrengths = tool.strengths.slice(0, 3);
-  const pricingSummary = tool.pricing
+  const localized = localizeToolContent(tool, t);
+  const topStrengths = localized.strengths.slice(0, 3);
+  const pricingSummary = localized.pricing
     .slice(0, 2)
     .map((plan) => plan.name)
     .join(" · ");
@@ -27,7 +30,9 @@ export function ToolCard({ tool, onSelect }: ToolCardProps) {
     >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="font-semibold text-foreground">{tool.name}</h3>
+          <h3 className="font-semibold text-foreground">
+            {translateTool(tool.name, t)}
+          </h3>
           <p className="text-sm text-muted-foreground">{tool.provider}</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -41,7 +46,7 @@ export function ToolCard({ tool, onSelect }: ToolCardProps) {
       </div>
 
       <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
-        {tool.description}
+        {localized.description}
       </p>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -68,7 +73,7 @@ export function ToolCard({ tool, onSelect }: ToolCardProps) {
       </p>
 
       {tool.connectedInOrg && tool.orgSpend !== undefined ? (
-        <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border pt-3 text-sm" dir="ltr">
+        <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border pt-3 text-sm">
           <div>
             <span className="text-muted-foreground">{t("orgSpend")}</span>
             <p className="font-semibold">{formatCurrency(tool.orgSpend)}</p>

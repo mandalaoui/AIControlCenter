@@ -15,6 +15,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getPaginatedLogs } from "@/lib/analytics";
+import {
+  translateEntity,
+  translateModel,
+  translateTool,
+  translateUser,
+} from "@/lib/i18n/labels";
+import { getIntlLocale } from "@/lib/i18n/format-locale";
 import { formatCurrency, formatRoiDisplay } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { CategorizedUsageLog } from "@/lib/types";
@@ -26,11 +33,11 @@ interface UsageLogsTableProps {
 }
 
 export function UsageLogsTable({ logs }: UsageLogsTableProps) {
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
 
   function formatLogDate(iso: string): string {
     const date = new Date(iso);
-    return date.toLocaleString(i18n.language === "he" ? "he-IL" : "en-US", {
+    return date.toLocaleString(getIntlLocale(), {
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -68,24 +75,26 @@ export function UsageLogsTable({ logs }: UsageLogsTableProps) {
                 key={log.id}
                 className={cn(index % 2 === 0 && "bg-muted/20")}
               >
-                <TableCell className="text-muted-foreground" dir="ltr">
+                <TableCell className="text-muted-foreground">
                   {formatLogDate(log.date)}
                 </TableCell>
                 <TableCell>
                   <span className="inline-flex rounded border border-border bg-muted px-2 py-1 text-xs font-medium">
-                    {log.team}
+                    {translateEntity(log.team, t)}
                   </span>
                 </TableCell>
-                <TableCell className="font-medium">{log.user}</TableCell>
-                <TableCell>{log.tool}</TableCell>
+                <TableCell className="font-medium">
+                  {translateUser(log.user, t)}
+                </TableCell>
+                <TableCell>{translateTool(log.tool, t)}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  {log.model}
+                  {translateModel(log.model, t)}
                 </TableCell>
                 <TableCell>{t(`usageTypes.${log.usageType}`)}</TableCell>
-                <TableCell className="text-end font-mono" dir="ltr">
+                <TableCell className="text-end font-mono">
                   {formatCurrency(log.cost)}
                 </TableCell>
-                <TableCell className="text-end" dir="ltr">
+                <TableCell className="text-end">
                   <span className="inline-flex items-center justify-end gap-1 font-semibold text-green-500">
                     <TrendingUp className="h-3 w-3" aria-hidden />
                     {formatRoiDisplay(log.roi)}
@@ -107,7 +116,7 @@ export function UsageLogsTable({ logs }: UsageLogsTableProps) {
       </div>
 
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground" dir="ltr">
+        <p className="text-sm text-muted-foreground">
           {t("paginationSummary", {
             from: (page - 1) * PAGE_SIZE + 1,
             to: Math.min(page * PAGE_SIZE, pagination.totalItems),
