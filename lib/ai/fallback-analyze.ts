@@ -50,7 +50,7 @@ export function buildFallbackAnalyzeResponse(
     });
   }
 
-  const cursor = data.byTool.find((tool) => tool.name === "Cursor");
+  const cursor = data.byTool.find((tool) => tool.id === "cursor");
   if (cursor && cursor.totalSeats > 0 && cursor.seatUtilization < 0.3) {
     const inactive = cursor.totalSeats - cursor.activeSeats;
     const utilization = Math.round(cursor.seatUtilization * 100);

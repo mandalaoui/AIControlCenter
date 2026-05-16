@@ -22,20 +22,9 @@ import type {
   OverviewPageData,
   ProviderSpendItem,
   RoiChartItem,
-  Tool,
   UsageLog,
 } from "@/lib/types";
-
-const TOOL_PROVIDER_KEY: Record<Tool, string> = {
-  "OpenAI API": "openai",
-  "Anthropic API": "anthropic",
-  "GitHub Copilot": "github",
-  Cursor: "cursor",
-  "Microsoft Copilot": "microsoft",
-  "Slack AI": "slack",
-  "Google Gemini": "google",
-  "Internal Agent": "internal",
-};
+import { getProviderKeyForToolId } from "@/lib/tool-registry";
 
 function percentChange(current: number, previous: number): number {
   if (previous === 0) {
@@ -135,8 +124,8 @@ function buildKpiInsight(
         .filter((log) => log.team === a.name)
         .reduce((sum, log) => sum + log.estimatedHoursSaved, 0),
   )[0];
-  const cursor = byTool.find((tool) => tool.name === "Cursor");
-  const slack = byTool.find((tool) => tool.name === "Slack AI");
+  const cursor = byTool.find((tool) => tool.id === "cursor");
+  const slack = byTool.find((tool) => tool.id === "slack-ai");
   const primaryRec = recommendations[0];
 
   switch (id) {
@@ -325,7 +314,7 @@ export function getSpendByProvider(data: AnalyticsData): ProviderSpendItem[] {
   const totals = new Map<string, number>();
 
   for (const tool of data.byTool) {
-    const key = TOOL_PROVIDER_KEY[tool.name] ?? "other";
+    const key = getProviderKeyForToolId(tool.id);
     totals.set(key, roundMoney((totals.get(key) ?? 0) + tool.spend));
   }
 
@@ -354,7 +343,7 @@ export function getRoiByTeamInsight(data: AnalyticsData): ChartInsightData {
 export function getRoiByToolInsight(data: AnalyticsData): ChartInsightData {
   const top = [...data.byTool].sort((a, b) => b.roi - a.roi)[0];
   const low = [...data.byTool].sort((a, b) => a.roi - b.roi)[0];
-  const slack = data.byTool.find((tool) => tool.name === "Slack AI");
+  const slack = data.byTool.find((tool) => tool.id === "slack-ai");
 
   return {
     insightKey: "chartInsights.roiByTool",

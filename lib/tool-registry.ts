@@ -1,11 +1,11 @@
 import type { Tool } from "@/lib/types";
 
 export interface ToolRegistryEntry {
-  id: string;           // "openai-api"
-  name: Tool;           // "OpenAI API"
-  providerKey: string;  // "openai"
+  id: string;
+  name: Tool;
+  providerKey: string;
   connectedInOrg: boolean;
-  totalSeats: number;   // 0 = token-based
+  totalSeats: number;
   monthlySeatCost: number;
 }
 
@@ -76,40 +76,71 @@ export const TOOL_REGISTRY: ToolRegistryEntry[] = [
   },
 ];
 
-// Derived lookups — single source of truth
+export const SPEND_LINE_KEYS = [
+  "openai",
+  "anthropic",
+  "github",
+  "microsoft",
+  "other",
+] as const;
+
+export type SpendLineKey = (typeof SPEND_LINE_KEYS)[number];
+
 export const TOOL_BY_NAME = Object.fromEntries(
   TOOL_REGISTRY.map((t) => [t.name, t]),
 ) as Record<Tool, ToolRegistryEntry>;
 
 export const TOOL_BY_ID = Object.fromEntries(
   TOOL_REGISTRY.map((t) => [t.id, t]),
-);
+) as Record<string, ToolRegistryEntry>;
 
 export const TOOL_PROVIDER_KEY = Object.fromEntries(
   TOOL_REGISTRY.map((t) => [t.name, t.providerKey]),
 ) as Record<Tool, string>;
 
-export const SEAT_BASED_TOOLS = Object.fromEntries(
-  TOOL_REGISTRY
-    .filter((t) => t.totalSeats > 0)
-    .map((t) => [t.name, t.totalSeats]),
-) as Partial<Record<Tool, number>>;
+export const SEAT_TOTAL_BY_TOOL_ID = Object.fromEntries(
+  TOOL_REGISTRY.filter((t) => t.totalSeats > 0).map((t) => [t.id, t.totalSeats]),
+) as Record<string, number>;
 
-export const SEAT_MONTHLY_COST = Object.fromEntries(
+export const SEAT_MONTHLY_COST_BY_TOOL_ID = Object.fromEntries(
   TOOL_REGISTRY
     .filter((t) => t.monthlySeatCost > 0)
-    .map((t) => [t.name, t.monthlySeatCost]),
-) as Partial<Record<Tool, number>>;
+    .map((t) => [t.id, t.monthlySeatCost]),
+) as Record<string, number>;
 
 export const CONNECTED_TOOLS = TOOL_REGISTRY.filter((t) => t.connectedInOrg);
 
-export const SPEND_LINE_KEYS = [
-    "openai",
-    "anthropic",
-    "github",
-    "microsoft",
-    "other",
-  ] as const;
-  
-  export type SpendLineKey = (typeof SPEND_LINE_KEYS)[number];
-  
+export function getRegistryEntryForTool(tool: Tool): ToolRegistryEntry | undefined {
+  return TOOL_BY_NAME[tool];
+}
+
+export function getToolIdForName(tool: Tool): string | undefined {
+  return TOOL_BY_NAME[tool]?.id;
+}
+
+export function getSpendLineKeyForToolId(toolId: string): SpendLineKey {
+  const provider = TOOL_BY_ID[toolId]?.providerKey;
+  if (provider === "openai") return "openai";
+  if (provider === "anthropic") return "anthropic";
+  if (provider === "github") return "github";
+  if (
+    provider === "microsoft" ||
+    provider === "cursor" ||
+    provider === "slack"
+  ) {
+    return "microsoft";
+  }
+  return "other";
+}
+
+export function getSpendLineKeyForToolName(toolName: Tool): SpendLineKey {
+  const toolId = getToolIdForName(toolName);
+  if (!toolId) {
+    return "other";
+  }
+  return getSpendLineKeyForToolId(toolId);
+}
+
+export function getProviderKeyForToolId(toolId: string): string {
+  return TOOL_BY_ID[toolId]?.providerKey ?? "other";
+}

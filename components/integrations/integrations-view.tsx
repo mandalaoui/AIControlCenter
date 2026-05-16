@@ -1,16 +1,16 @@
 "use client";
 
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { integrationConnectors } from "@/data/integrations";
 import { IntegrationCard } from "@/components/integrations/integration-card";
 import { PageHeader } from "@/components/shared/page-header";
+import { getConnectedIntegrationConnectors } from "@/lib/integrations";
 
 export function IntegrationsView() {
   const { t } = useTranslation("common");
-  const connectedCount = integrationConnectors.filter(
-    (connector) => connector.status === "connected",
-  ).length;
+  const connectors = useMemo(() => getConnectedIntegrationConnectors(), []);
+  const connectedCount = connectors.length;
 
   return (
     <div className="space-y-6">
@@ -18,11 +18,10 @@ export function IntegrationsView() {
       <p className="text-sm text-muted-foreground">
         {t("integrationsSummary", {
           connected: connectedCount,
-          total: integrationConnectors.length,
         })}
       </p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {integrationConnectors.map((connector) => (
+        {connectors.map((connector) => (
           <IntegrationCard key={connector.id} connector={connector} />
         ))}
       </div>

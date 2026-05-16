@@ -1,58 +1,55 @@
 import { toolsDirectory } from "@/data/tools-directory";
-import type { AITool, AnalyticsData, Tool } from "@/lib/types";
-import { TOOL_BY_ID } from "./tool-registry";
+import type {
+  AITool,
+  AIToolDirectoryEntry,
+  AnalyticsData,
+} from "@/lib/types";
+import { TOOL_BY_ID } from "@/lib/tool-registry";
 
-function resolveToolName(toolId: string): Tool | undefined {
-  return TOOL_BY_ID[toolId]?.name;
+function getToolSummaryById(toolId: string, analyticsData: AnalyticsData) {
+  return analyticsData.byTool.find((tool) => tool.id === toolId);
 }
+
 export function getToolSpend(toolId: string, analyticsData: AnalyticsData): number {
-  const toolName = resolveToolName(toolId);
-  if (!toolName) {
-    return 0;
-  }
-  return (
-    analyticsData.byTool.find((tool) => tool.name === toolName)?.spend ?? 0
-  );
+  return getToolSummaryById(toolId, analyticsData)?.spend ?? 0;
 }
 
 export function getToolROI(toolId: string, analyticsData: AnalyticsData): number {
-  const toolName = resolveToolName(toolId);
-  if (!toolName) {
-    return 0;
-  }
-  return analyticsData.byTool.find((tool) => tool.name === toolName)?.roi ?? 0;
+  return getToolSummaryById(toolId, analyticsData)?.roi ?? 0;
 }
 
 export function getToolSeatUtilization(
   toolId: string,
   analyticsData: AnalyticsData,
 ): number {
-  const toolName = resolveToolName(toolId);
-  if (!toolName) {
-    return 0;
+  return getToolSummaryById(toolId, analyticsData)?.seatUtilization ?? 0;
+}
+
+export function enrichDirectoryEntry(
+  entry: AIToolDirectoryEntry,
+  analyticsData: AnalyticsData,
+): AITool {
+  const registry = TOOL_BY_ID[entry.id];
+  const connectedInOrg = registry?.connectedInOrg ?? false;
+
+  if (!connectedInOrg) {
+    return { ...entry, connectedInOrg };
   }
-  return (
-    analyticsData.byTool.find((tool) => tool.name === toolName)
-      ?.seatUtilization ?? 0
-  );
+
+  return {
+    ...entry,
+    connectedInOrg,
+    orgSpend: getToolSpend(entry.id, analyticsData),
+    orgROI: getToolROI(entry.id, analyticsData),
+    orgSeatUtilization: getToolSeatUtilization(entry.id, analyticsData),
+  };
 }
 
 export function enrichToolsWithOrgData(
-  tools: AITool[],
+  tools: AIToolDirectoryEntry[],
   analyticsData: AnalyticsData,
 ): AITool[] {
-  return tools.map((tool) => {
-    if (!tool.connectedInOrg) {
-      return tool;
-    }
-
-    return {
-      ...tool,
-      orgSpend: getToolSpend(tool.id, analyticsData),
-      orgROI: getToolROI(tool.id, analyticsData),
-      orgSeatUtilization: getToolSeatUtilization(tool.id, analyticsData),
-    };
-  });
+  return tools.map((tool) => enrichDirectoryEntry(tool, analyticsData));
 }
 
 export function getEnrichedToolsDirectory(

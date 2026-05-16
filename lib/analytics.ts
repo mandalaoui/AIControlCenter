@@ -23,14 +23,18 @@ import type {
   TeamSummary,
   Tool,
   ToolComparisonRow,
+  UsageLogsCategorizationSummary,
+  UsageLogsFilters,
   ToolSummary,
   UsageLog,
+  UsageType,
   UserSpendSummary,
 } from "@/lib/types";
 import {
-  TOOL_PROVIDER_KEY,
-  SEAT_BASED_TOOLS,
-  SEAT_MONTHLY_COST,
+  getSpendLineKeyForToolName,
+  getToolIdForName,
+  SEAT_MONTHLY_COST_BY_TOOL_ID,
+  SEAT_TOTAL_BY_TOOL_ID,
   type SpendLineKey,
 } from "./tool-registry";
 
@@ -288,21 +292,6 @@ const MODEL_TIER: Record<Model, string> = {
   "N/A": "low",
 };
 
-function mapToolSpendToLineKey(toolName: Tool): SpendLineKey {
-  const provider = TOOL_PROVIDER_KEY[toolName];
-  if (provider === "openai") return "openai";
-  if (provider === "anthropic") return "anthropic";
-  if (provider === "github") return "github";
-  if (
-    provider === "microsoft" ||
-    provider === "cursor" ||
-    provider === "slack"
-  ) {
-    return "microsoft";
-  }
-  return "other";
-}
-
 /** Human-readable period label from telemetry date range. */
 export function computePeriodFromLogs(logs: UsageLog[]): string {
   if (logs.length === 0) {
@@ -411,7 +400,8 @@ export function getToolSummaries(logs: UsageLog[]): ToolSummary[] {
     );
     const roi = calculateROI(hoursSaved, spend);
     const activeSeats = new Set(toolLogs.map((log) => log.user)).size;
-    const totalSeats = SEAT_BASED_TOOLS[tool] ?? 0;
+    const toolId = getToolIdForName(tool) ?? tool;
+    const totalSeats = SEAT_TOTAL_BY_TOOL_ID[toolId] ?? 0;
 
     const seatUtilization =
       totalSeats > 0
@@ -421,6 +411,7 @@ export function getToolSummaries(logs: UsageLog[]): ToolSummary[] {
           : 0;
 
     return {
+      id: toolId,
       name: tool,
       spend,
       roi,
@@ -633,7 +624,7 @@ export function estimateCostSavingsOpportunity(
         0,
         tool.totalSeats - tool.activeSeats,
       );
-      const seatCost = SEAT_MONTHLY_COST[tool.name] ?? 20;
+      const seatCost = SEAT_MONTHLY_COST_BY_TOOL_ID[tool.id] ?? 20;
       savings += unused * seatCost;
     }
   }
@@ -658,7 +649,7 @@ function getOptimizationRecommendations(
 ): OptimizationRecommendation[] {
   const recommendations: OptimizationRecommendation[] = [];
 
-  const cursor = data.byTool.find((tool) => tool.name === "Cursor");
+  const cursor = data.byTool.find((tool) => tool.id === "cursor");
   if (cursor && cursor.totalSeats > 0) {
     const unused = cursor.totalSeats - cursor.activeSeats;
     if (unused >= 10) {
@@ -673,7 +664,7 @@ function getOptimizationRecommendations(
         riskLevel: "low",
         confidence: 0.92,
         estimatedMonthlySavings: roundMoney(
-          unused * (SEAT_MONTHLY_COST.Cursor ?? 32),
+          unused * (SEAT_MONTHLY_COST_BY_TOOL_ID.cursor ?? 32),
         ),
         category: "seat-reduction",
         i18nParams: {
@@ -686,7 +677,7 @@ function getOptimizationRecommendations(
     }
   }
 
-  const slack = data.byTool.find((tool) => tool.name === "Slack AI");
+  const slack = data.byTool.find((tool) => tool.id === "slack-ai");
   if (slack && slack.seatUtilization < 0.3) {
     const slackUtil = roundPercent(slack.seatUtilization * 100);
     recommendations.push({
@@ -699,7 +690,7 @@ function getOptimizationRecommendations(
       confidence: 0.88,
       estimatedMonthlySavings: roundMoney(
         (slack.totalSeats - slack.activeSeats) *
-        (SEAT_MONTHLY_COST["Slack AI"] ?? 12),
+        (SEAT_MONTHLY_COST_BY_TOOL_ID["slack-ai"] ?? 12),
       ),
       category: "seat-reduction",
       i18nParams: {
@@ -897,7 +888,7 @@ export function getSpendOverTime(
     };
 
     for (const [toolName, amount] of weeklyByTool.get(week) ?? []) {
-      const key = mapToolSpendToLineKey(toolName);
+      const key = getSpendLineKeyForToolName(toolName);
       lines[key] = roundMoney(lines[key] + amount);
     }
 
@@ -1085,6 +1076,71 @@ export function getCategorizedUsageLogs(
   }));
 }
 
+export function filterCategorizedUsageLogs(
+  logs: CategorizedUsageLog[],
+  filters: UsageLogsFilters,
+): CategorizedUsageLog[] {
+  return logs.filter((log) => {
+    if (
+      filters.purpose !== "all" &&
+      log.categorization.category !== filters.purpose
+    ) {
+      return false;
+    }
+    if (filters.team !== "all" && log.team !== filters.team) {
+      return false;
+    }
+    if (
+      filters.productivity !== "all" &&
+      log.categorization.productivityLevel !== filters.productivity
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
+
+export function getUsageLogsFilterOptions(logs: CategorizedUsageLog[]): {
+  purposes: UsageType[];
+  teams: Team[];
+} {
+  const purposes = new Set<UsageType>();
+  const teams = new Set<Team>();
+
+  for (const log of logs) {
+    purposes.add(log.categorization.category);
+    teams.add(log.team);
+  }
+
+  return {
+    purposes: [...purposes].sort(),
+    teams: [...teams].sort(),
+  };
+}
+
+export function getUsageLogsCategorizationSummary(
+  logs: CategorizedUsageLog[],
+): UsageLogsCategorizationSummary {
+  const purposes = new Set(logs.map((log) => log.categorization.category));
+  const teams = new Set(logs.map((log) => log.team));
+  const productivity: UsageLogsCategorizationSummary["productivity"] = {
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
+
+  for (const log of logs) {
+    productivity[log.categorization.productivityLevel]++;
+  }
+
+  return {
+    purposeCount: purposes.size,
+    teamCount: teams.size,
+    productivity,
+    totalLogs: logs.length,
+  };
+}
+
 export function getPaginatedLogs<T>(
   items: T[],
   page: number,
@@ -1171,6 +1227,7 @@ export function getToolComparisonRows(
       );
 
       return {
+        id: tool.id,
         name: tool.name,
         spend: tool.spend,
         roi: tool.roi,

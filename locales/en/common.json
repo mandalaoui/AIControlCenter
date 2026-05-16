@@ -112,6 +112,16 @@
   },
   "usageLogs": "Smart Usage Logs",
   "aiCategorized": "AI-Categorized",
+  "smartCategorization": {
+    "title": "Smart categorization",
+    "description": "Automatically tag or classify usage logs by purpose, team, or productivity level.",
+    "purpose": "Purpose",
+    "purposeSummary": "{{count}} categories",
+    "team": "Team",
+    "teamSummary": "{{count}} teams tagged",
+    "productivity": "Productivity",
+    "productivitySummary": "{{high}}% high · {{medium}}% medium · {{low}}% low"
+  },
   "filters": "Filters",
   "breakdownBy": "Breakdown by",
   "team": "Team",
@@ -119,6 +129,15 @@
   "toolFilter": "Tool",
   "monthFilter": "Month",
   "month": "Month",
+  "purposeFilter": "Purpose",
+  "allPurposes": "All purposes",
+  "productivityFilter": "Productivity",
+  "allProductivityLevels": "All productivity levels",
+  "productivityLevel": {
+    "high": "High productivity",
+    "medium": "Medium productivity",
+    "low": "Low productivity"
+  },
   "allTeams": "All teams",
   "allTools": "All tools",
   "allMonths": "All months",
@@ -268,7 +287,7 @@
   "dataType": "Data",
   "configure": "Configure",
   "connect": "Connect",
-  "integrationsSummary": "{{connected}} of {{total}} connectors active",
+  "integrationsSummary": "{{connected}} connectors active",
   "integrationNames": {
     "openai": "OpenAI API",
     "anthropic": "Anthropic API",

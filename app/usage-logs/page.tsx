@@ -1,7 +1,11 @@
-import { UsageLogsTable } from "@/components/usage-logs/usage-logs-table";
 import { UsageLogsHeader } from "@/components/usage-logs/usage-logs-header";
+import { UsageLogsView } from "@/components/usage-logs/usage-logs-view";
 import { DeferredContent } from "@/components/shared/deferred-content";
-import { TableSkeleton } from "@/components/shared/page-skeletons";
+import {
+  CategorizationPanelSkeleton,
+  TableSkeleton,
+  UsageLogsFiltersSkeleton,
+} from "@/components/shared/page-skeletons";
 import {
   computeAnalyticsData,
   getCategorizedUsageLogs,
@@ -18,13 +22,15 @@ export default function UsageLogsPage() {
       fallback={
         <section className="space-y-6">
           <UsageLogsHeader />
+          <CategorizationPanelSkeleton />
+          <UsageLogsFiltersSkeleton />
           <TableSkeleton rows={12} />
         </section>
       }
     >
       <section className="space-y-6">
         <UsageLogsHeader />
-        <UsageLogsTable logs={logs} />
+        <UsageLogsView logs={logs} />
       </section>
     </DeferredContent>
   );

@@ -88,7 +88,8 @@ export interface ToolModelInfo {
   recommended: boolean;
 }
 
-export interface AITool {
+/** Marketplace / intelligence metadata (no operational org state). */
+export interface AIToolDirectoryEntry {
   id: string;
   name: string;
   provider: string;
@@ -98,9 +99,13 @@ export interface AITool {
   limitations: string[];
   bestFor: UsageType[];
   notRecommendedFor: string[];
-  connectedInOrg: boolean;
   pricing: ToolPricingPlan[];
   models: ToolModelInfo[];
+}
+
+/** Directory entry enriched with org registry + analytics. */
+export interface AITool extends AIToolDirectoryEntry {
+  connectedInOrg: boolean;
   orgSpend?: number;
   orgROI?: number;
   orgSeatUtilization?: number;
@@ -118,6 +123,7 @@ export interface TeamSummary {
 }
 
 export interface ToolSummary {
+  id: string;
   name: Tool;
   spend: number;
   roi: number;
@@ -320,6 +326,19 @@ export interface CategorizedUsageLog extends UsageLog {
   categorization: AICategorizationResult;
 }
 
+export interface UsageLogsCategorizationSummary {
+  purposeCount: number;
+  teamCount: number;
+  productivity: Record<ProductivityLevel, number>;
+  totalLogs: number;
+}
+
+export interface UsageLogsFilters {
+  purpose: UsageType | "all";
+  team: Team | "all";
+  productivity: ProductivityLevel | "all";
+}
+
 export type CostBreakdownDimension = "team" | "tool" | "month" | "model";
 
 export interface CostAnalyticsFilters {
@@ -347,6 +366,7 @@ export interface TeamDetailCard extends TeamSummary {
 }
 
 export interface ToolComparisonRow {
+  id: string;
   name: Tool;
   spend: number;
   roi: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles, TrendingUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -46,10 +46,16 @@ export function UsageLogsTable({ logs }: UsageLogsTableProps) {
   }
   const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    setPage(1);
+  }, [logs]);
+
   const pagination = useMemo(
     () => getPaginatedLogs(logs, page, PAGE_SIZE),
     [logs, page],
   );
+
+  const isEmpty = pagination.totalItems === 0;
 
   return (
     <div className="space-y-4">
@@ -70,6 +76,16 @@ export function UsageLogsTable({ logs }: UsageLogsTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {isEmpty ? (
+              <TableRow>
+                <TableCell
+                  colSpan={10}
+                  className="py-12 text-center text-sm text-muted-foreground"
+                >
+                  {t("noDataForFilters")}
+                </TableCell>
+              </TableRow>
+            ) : null}
             {pagination.items.map((log, index) => (
               <TableRow
                 key={log.id}
@@ -115,33 +131,35 @@ export function UsageLogsTable({ logs }: UsageLogsTableProps) {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">
-          {t("paginationSummary", {
-            from: (page - 1) * PAGE_SIZE + 1,
-            to: Math.min(page * PAGE_SIZE, pagination.totalItems),
-            total: pagination.totalItems,
-          })}
-        </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            {t("previous")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= pagination.totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            {t("next")}
-          </Button>
+      {!isEmpty ? (
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            {t("paginationSummary", {
+              from: (page - 1) * PAGE_SIZE + 1,
+              to: Math.min(page * PAGE_SIZE, pagination.totalItems),
+              total: pagination.totalItems,
+            })}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              {t("previous")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              {t("next")}
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -5,9 +5,9 @@
 // Used by: /app/tools-directory, /lib/tools.ts
 // ─────────────────────────────────────────────────────────────
 
-import type { AITool } from "@/lib/types"
+import type { AIToolDirectoryEntry } from "@/lib/types"
 
-export const toolsDirectory: AITool[] = [
+export const toolsDirectory: AIToolDirectoryEntry[] = [
   // ─── OpenAI API ───────────────────────────────────────────
   {
     id: "openai-api",
@@ -33,7 +33,6 @@ export const toolsDirectory: AITool[] = [
       "Real-time voice applications without Realtime API",
       "Tasks requiring >128K context on GPT-3.5",
     ],
-    connectedInOrg: true,
     pricing: [
       {
         name: "Pay-as-you-go",
@@ -132,7 +131,6 @@ export const toolsDirectory: AITool[] = [
       "Simple high-volume tasks where cost matters most — use Haiku",
       "Applications requiring image generation",
     ],
-    connectedInOrg: true,
     pricing: [
       {
         name: "Pay-as-you-go",
@@ -218,7 +216,6 @@ export const toolsDirectory: AITool[] = [
       "Non-developer team members",
       "Users who primarily need NL chat (use standalone Claude/GPT)",
     ],
-    connectedInOrg: true,
     pricing: [
       {
         name: "Business",
@@ -291,7 +288,6 @@ export const toolsDirectory: AITool[] = [
       "Non-technical team members",
       "Developers who prefer minimal tooling changes",
     ],
-    connectedInOrg: true,
     pricing: [
       {
         name: "Pro",
@@ -365,7 +361,6 @@ export const toolsDirectory: AITool[] = [
       "Developer workflows",
       "Teams not using Microsoft 365 daily",
     ],
-    connectedInOrg: true,
     pricing: [
       {
         name: "Microsoft 365 Copilot",
@@ -419,7 +414,6 @@ export const toolsDirectory: AITool[] = [
       "Teams with low message volume",
       "Organizations using alternative messaging platforms",
     ],
-    connectedInOrg: true,
     pricing: [
       {
         name: "Slack AI Add-on",
@@ -472,7 +466,6 @@ export const toolsDirectory: AITool[] = [
       "Teams standardized on OpenAI or Anthropic tooling",
       "High-volume coding tasks (Cursor/Copilot purpose-built for this)",
     ],
-    connectedInOrg: true,
     pricing: [
       {
         name: "Pay-as-you-go",
@@ -551,7 +544,6 @@ export const toolsDirectory: AITool[] = [
       "One-off tasks — use API directly",
       "Teams without engineering capacity",
     ],
-    connectedInOrg: true,
     pricing: [
       {
         name: "Internal (API pass-through)",
