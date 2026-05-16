@@ -37,36 +37,43 @@ import {
   SEAT_TOTAL_BY_TOOL_ID,
   type SpendLineKey,
 } from "./tool-registry";
+import { calculateRecommendationConfidence } from "./analytics/confidence";
+import {
+  detectModelMismatches,
+  generateModelMismatchRecommendations,
+  getModelMismatchRate,
+} from "./analytics/model-mismatch";
+import {
+  detectToolOverlaps,
+  generateOverlapRecommendations,
+} from "./analytics/overlap";
+import { HIGH_COMPLEXITY_MODELS, LOW_ROI_THRESHOLD } from "./analytics/constants";
+import {
+  calculateCPT,
+  calculateROI,
+  roundMoney,
+  roundPercent,
+  roundScore,
+} from "./analytics/math";
 
-const HOURLY_RATE = 75;
-const LOW_ROI_THRESHOLD = 50;
+export {
+  calculateCPT,
+  calculateROI,
+  roundMoney,
+  roundPercent,
+  roundScore,
+} from "./analytics/math";
+export {
+  detectModelMismatches,
+  generateModelMismatchRecommendations,
+} from "./analytics/model-mismatch";
+export {
+  detectToolOverlaps,
+  generateOverlapRecommendations,
+} from "./analytics/overlap";
+
 const COMPLEXITY_MISMATCH_THRESHOLD = 4;
 const HOURS_SAVED_CAP_PER_LOG = 8;
-
-// Prevents unrealistic ROI explosions on tiny costs.
-const MINIMUM_EFFECTIVE_COST = 10;
-
-const HIGH_COMPLEXITY_MODELS: Model[] = [
-  "Claude Opus",
-  "GPT-4",
-  "Gemini Ultra",
-];
-
-export function roundMoney(value: number): number {
-  if (value > 0 && value < 0.01) {
-    return Number(value.toFixed(4));
-  }
-
-  return Math.round(value * 100) / 100;
-}
-
-export function roundPercent(value: number): number {
-  return Math.round(value * 10) / 10;
-}
-
-export function roundScore(value: number): number {
-  return Math.round(value * 10) / 10;
-}
 
 function cappedHours(log: UsageLog): number {
   return Math.min(log.estimatedHoursSaved, HOURS_SAVED_CAP_PER_LOG);
@@ -76,60 +83,7 @@ export function loadUsageLogs(): UsageLog[] {
   return generatedLogs as UsageLog[];
 }
 
-export function calculateROI(
-  estimatedHoursSaved: number,
-  cost: number,
-): number {
-  if (cost <= 0) {
-    return 0;
-  }
-
-  const effectiveCost = Math.max(
-    cost,
-    MINIMUM_EFFECTIVE_COST,
-  );
-
-  return roundPercent(
-    (
-      (
-        (estimatedHoursSaved * HOURLY_RATE) -
-        effectiveCost
-      ) / effectiveCost
-    ) * 100,
-  );
-}
-
-export function calculateCPT(
-  cost: number,
-  successfulTasks: number,
-): number {
-  if (successfulTasks <= 0) {
-    return 0;
-  }
-
-  return roundMoney(
-    cost / successfulTasks,
-  );
-}
-
-export function getModelMismatchRate(
-  logs: UsageLog[],
-): number {
-  if (logs.length === 0) {
-    return 0;
-  }
-
-  const mismatches = logs.filter(
-    (log) =>
-      HIGH_COMPLEXITY_MODELS.includes(log.model) &&
-      log.complexityScore <
-      COMPLEXITY_MISMATCH_THRESHOLD,
-  ).length;
-
-  return roundPercent(
-    (mismatches / logs.length) * 100,
-  ) / 100;
-}
+export { getModelMismatchRate } from "./analytics/model-mismatch";
 
 export function getSuccessRate(
   logs: UsageLog[],
@@ -646,6 +600,7 @@ function getOptimizationRecommendations(
     AnalyticsData,
     "byTeam" | "byTool" | "byModel" | "kpis" | "anomalies"
   >,
+  logs: UsageLog[],
 ): OptimizationRecommendation[] {
   const recommendations: OptimizationRecommendation[] = [];
 
@@ -662,7 +617,12 @@ function getOptimizationRecommendations(
         description: `Reduce Cursor licenses by ${seatsToReduce} seats where developers show no usage in the last 30 days.`,
         evidence: `${unused} of ${cursor.totalSeats} Cursor seats are inactive (${cursorUtil}% utilization).`,
         riskLevel: "low",
-        confidence: 0.92,
+        confidence: calculateRecommendationConfidence({
+          sampleSize: cursor.totalSeats,
+          signalStrength: Math.min(1, unused / 10),
+          consistency: unused / cursor.totalSeats,
+          severity: 1 - cursor.seatUtilization,
+        }),
         estimatedMonthlySavings: roundMoney(
           unused * (SEAT_MONTHLY_COST_BY_TOOL_ID.cursor ?? 32),
         ),
@@ -687,7 +647,12 @@ function getOptimizationRecommendations(
         "Audit Slack AI seat assignments and remove licenses for teams with zero activity.",
       evidence: `Slack AI seat utilization is ${slackUtil}% across ${slack.totalSeats} configured seats.`,
       riskLevel: "low",
-      confidence: 0.88,
+      confidence: calculateRecommendationConfidence({
+        sampleSize: slack.totalSeats,
+        signalStrength: Math.min(1, (0.3 - slack.seatUtilization) / 0.3),
+        consistency: 1 - slack.seatUtilization,
+        severity: 0.3 - slack.seatUtilization,
+      }),
       estimatedMonthlySavings: roundMoney(
         (slack.totalSeats - slack.activeSeats) *
         (SEAT_MONTHLY_COST_BY_TOOL_ID["slack-ai"] ?? 12),
@@ -700,22 +665,10 @@ function getOptimizationRecommendations(
     });
   }
 
-  const opus = data.byModel.find((model) => model.name === "Claude Opus");
-  if (opus && opus.mismatchRate > 0.25) {
-    const opusMismatch = roundPercent(opus.mismatchRate * 100);
-    recommendations.push({
-      id: "rec-opus-downgrade",
-      title: "Downgrade low-complexity Claude Opus usage",
-      description:
-        "Route complexity scores below 4 to Claude Sonnet or Haiku instead of Claude Opus.",
-      evidence: `${opusMismatch}% of Claude Opus calls are model-task mismatches.`,
-      riskLevel: "medium",
-      confidence: 0.85,
-      estimatedMonthlySavings: roundMoney(opus.spend * 0.35),
-      category: "model-switch",
-      i18nParams: { mismatch: opusMismatch },
-    });
-  }
+  const modelMismatchRecommendations = generateModelMismatchRecommendations(
+    detectModelMismatches(logs),
+  );
+  recommendations.push(...modelMismatchRecommendations);
 
   const marketing = data.byTeam.find(
     (team) => team.name === "Marketing",
@@ -728,7 +681,12 @@ function getOptimizationRecommendations(
         "Provide targeted AI training and standardize on lower-cost models for content generation tasks.",
       evidence: `Marketing ROI is ${marketing.roi}% with $${marketing.spend.toLocaleString()} monthly spend.`,
       riskLevel: "medium",
-      confidence: 0.8,
+      confidence: calculateRecommendationConfidence({
+        sampleSize: marketing.activeUsers,
+        signalStrength: Math.min(1, (100 - marketing.roi) / 100),
+        consistency: marketing.wasteRatio,
+        severity: Math.min(1, marketing.spend / 10_000),
+      }),
       estimatedMonthlySavings: roundMoney(marketing.spend * 0.15),
       category: "workflow",
       i18nParams: {
@@ -738,6 +696,11 @@ function getOptimizationRecommendations(
     });
   }
 
+  const overlapRecommendations = generateOverlapRecommendations(
+    detectToolOverlaps(logs),
+  );
+  recommendations.push(...overlapRecommendations);
+
   if (recommendations.length === 0) {
     recommendations.push({
       id: "rec-general-review",
@@ -746,7 +709,11 @@ function getOptimizationRecommendations(
         "No critical optimization flags detected. Maintain quarterly tool and model audits.",
       evidence: `Organization ROI is ${data.kpis.totalROI}% with ${data.kpis.activeUsers} active users.`,
       riskLevel: "low",
-      confidence: 0.7,
+      confidence: calculateRecommendationConfidence({
+        sampleSize: data.kpis.activeUsers,
+        signalStrength: 0.35,
+        consistency: 0.5,
+      }),
       estimatedMonthlySavings: roundMoney(
         data.kpis.costSavingsOpportunity * 0.1,
       ),
@@ -807,13 +774,16 @@ export function computeAnalyticsData(
     ),
   };
 
-  const recommendations = getOptimizationRecommendations({
-    byTeam,
-    byTool,
-    byModel,
-    kpis,
-    anomalies,
-  });
+  const recommendations = getOptimizationRecommendations(
+    {
+      byTeam,
+      byTool,
+      byModel,
+      kpis,
+      anomalies,
+    },
+    logs,
+  );
 
   return {
     period: computePeriodFromLogs(logs),

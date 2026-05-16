@@ -182,6 +182,35 @@ export interface DashboardContext {
   lowProductivity: LowProductivityUser[];
 }
 
+export interface ModelMismatchSummary {
+  model: Model;
+  recommendedModel: Model;
+  mismatchRate: number;
+  mismatchScore: number;
+  affectedSpend: number;
+  mismatchedSpend: number;
+  estimatedSavings: number;
+  evidence: string;
+  logCount: number;
+  mismatchedLogCount: number;
+  avgMismatchedRoi: number;
+  avgComplexity: number;
+  smallOutputRate: number;
+  dominantUsageType?: UsageType;
+}
+
+export interface OverlapSummary {
+  tools: [Tool, Tool];
+  team: Team;
+  usageType: UsageType;
+  overlapScore: number;
+  estimatedSavings: number;
+  evidence: string;
+  sharedUsers: number;
+  overlappingSpend: number;
+  spendSimilarity: number;
+}
+
 export interface OptimizationRecommendation {
   id: string;
   title: string;

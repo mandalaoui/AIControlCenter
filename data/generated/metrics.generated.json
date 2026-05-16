@@ -23405,7 +23405,7 @@
   "kpis": {
     "totalSpend": 21541.88,
     "totalROI": 2476.1,
-    "efficiencyScore": 84.3,
+    "efficiencyScore": 78.4,
     "wasteRatio": 0,
     "hoursSaved": 7399.2,
     "activeUsers": 74,
@@ -23419,7 +23419,7 @@
       "spend": 581.11,
       "roi": 3613.2,
       "cpt": 0.13,
-      "efficiencyScore": 89.7,
+      "efficiencyScore": 86.1,
       "topTool": "Cursor",
       "activeUsers": 8,
       "wasteRatio": 0
@@ -23429,7 +23429,7 @@
       "spend": 13683.45,
       "roi": 2391,
       "cpt": 0.15,
-      "efficiencyScore": 88.1,
+      "efficiencyScore": 82.3,
       "topTool": "GitHub Copilot",
       "activeUsers": 22,
       "wasteRatio": 0
@@ -23439,7 +23439,7 @@
       "spend": 2717.74,
       "roi": 2380.4,
       "cpt": 0.16,
-      "efficiencyScore": 88.6,
+      "efficiencyScore": 81.8,
       "topTool": "GitHub Copilot",
       "activeUsers": 10,
       "wasteRatio": 0
@@ -23449,7 +23449,7 @@
       "spend": 646.94,
       "roi": 3264.3,
       "cpt": 0.14,
-      "efficiencyScore": 87.9,
+      "efficiencyScore": 83,
       "topTool": "GitHub Copilot",
       "activeUsers": 14,
       "wasteRatio": 0
@@ -23459,7 +23459,7 @@
       "spend": 2731.59,
       "roi": 2431.2,
       "cpt": 0.17,
-      "efficiencyScore": 88.1,
+      "efficiencyScore": 82.8,
       "topTool": "Cursor",
       "activeUsers": 10,
       "wasteRatio": 0
@@ -23469,7 +23469,7 @@
       "spend": 1181.04,
       "roi": 2794.5,
       "cpt": 0.15,
-      "efficiencyScore": 89.6,
+      "efficiencyScore": 85.4,
       "topTool": "GitHub Copilot",
       "activeUsers": 10,
       "wasteRatio": 0
@@ -23477,6 +23477,7 @@
   ],
   "byTool": [
     {
+      "id": "anthropic-api",
       "name": "Anthropic API",
       "spend": 5260.49,
       "roi": 2928.4,
@@ -23485,6 +23486,7 @@
       "totalSeats": 0
     },
     {
+      "id": "github-copilot",
       "name": "GitHub Copilot",
       "spend": 912.63,
       "roi": 9226.6,
@@ -23493,6 +23495,7 @@
       "totalSeats": 60
     },
     {
+      "id": "openai-api",
       "name": "OpenAI API",
       "spend": 6434.51,
       "roi": 2442.4,
@@ -23501,6 +23504,7 @@
       "totalSeats": 0
     },
     {
+      "id": "cursor",
       "name": "Cursor",
       "spend": 8934.25,
       "roi": 1544.5,
@@ -23514,25 +23518,25 @@
       "name": "Claude Sonnet",
       "spend": 17.35,
       "avgComplexityScore": 4.4,
-      "mismatchRate": 0
+      "mismatchRate": 0.28
     },
     {
       "name": "GPT-4o",
       "spend": 104.36,
       "avgComplexityScore": 5.1,
-      "mismatchRate": 0
+      "mismatchRate": 0.304
     },
     {
       "name": "GPT-4",
       "spend": 9426.07,
       "avgComplexityScore": 8.4,
-      "mismatchRate": 0
+      "mismatchRate": 0.263
     },
     {
       "name": "Claude Opus",
       "spend": 11993.92,
       "avgComplexityScore": 8.5,
-      "mismatchRate": 0
+      "mismatchRate": 0.332
     },
     {
       "name": "GPT-4o-mini",
@@ -23576,6 +23580,16 @@
         "team": "Marketing",
         "week": "2026-W20",
         "ratio": "3.273x"
+      }
+    },
+    {
+      "id": "opus-mismatch",
+      "description": "Claude Opus mismatch rate at 33.2% — many Engineering calls use Opus on low-complexity tasks",
+      "magnitude": "33.2% mismatch rate",
+      "affectedEntity": "Claude Opus",
+      "week": "2026-W22",
+      "params": {
+        "mismatch": 33.2
       }
     }
   ],
@@ -23675,6 +23689,108 @@
         "unused": 21,
         "totalSeats": 52,
         "utilization": 60
+      }
+    },
+    {
+      "id": "rec-model-mismatch-claude-opus-automation",
+      "title": "Downgrade Claude Opus used for repetitive automation tasks",
+      "description": "Shift Claude Opus calls in automation workflows to Claude Sonnet where complexity, output size, and ROI indicate premium model overspend.",
+      "evidence": "30% of Claude Opus calls (171 of 515) show premium misuse signals, avg complexity 7.7, ROI 1932.4% on mismatched spend, $4,978.31 in affected premium spend, concentrated in automation workflows.",
+      "riskLevel": "medium",
+      "confidence": 0.82,
+      "estimatedMonthlySavings": 1077.34,
+      "category": "model-switch",
+      "i18nParams": {
+        "model": "Claude Opus",
+        "recommendedModel": "Claude Sonnet",
+        "mismatch": 30,
+        "mismatchedSpend": 4978.31,
+        "avgRoi": 1932.4
+      }
+    },
+    {
+      "id": "rec-model-mismatch-gpt-4-coding",
+      "title": "Route coding GPT-4 usage to GPT-4o-mini",
+      "description": "Shift GPT-4 calls in coding workflows to GPT-4o-mini where complexity, output size, and ROI indicate premium model overspend.",
+      "evidence": "30% of GPT-4 calls (162 of 617) show premium misuse signals, avg complexity 7.7, ROI 1576.6% on mismatched spend, $1,487.69 in affected premium spend, concentrated in coding workflows.",
+      "riskLevel": "medium",
+      "confidence": 0.81,
+      "estimatedMonthlySavings": 376.91,
+      "category": "model-switch",
+      "i18nParams": {
+        "model": "GPT-4",
+        "recommendedModel": "GPT-4o-mini",
+        "mismatch": 30,
+        "mismatchedSpend": 1487.69,
+        "avgRoi": 1576.6
+      }
+    },
+    {
+      "id": "rec-overlap-engineering-coding-cursor-github-copilot",
+      "title": "Consolidate overlapping coding tools for Engineering",
+      "description": "Engineering uses both GitHub Copilot and Cursor for similar coding workflows. Consolidating to a single primary tool could reduce duplicated subscription and API spend.",
+      "evidence": "Engineering logged 9 active users on both GitHub Copilot and Cursor for coding workflows (100% user overlap, $630.3 overlapping spend, 98,691 vs 11,845 requests).",
+      "riskLevel": "medium",
+      "confidence": 0.81,
+      "estimatedMonthlySavings": 74.49,
+      "category": "tool-consolidation",
+      "i18nParams": {
+        "team": "Engineering",
+        "toolA": "GitHub Copilot",
+        "toolB": "Cursor",
+        "usageType": "coding",
+        "overlapScore": 0.7
+      }
+    },
+    {
+      "id": "rec-overlap-engineering-coding-cursor-openai-api",
+      "title": "Consolidate overlapping coding tools for Engineering",
+      "description": "Engineering uses both Cursor and OpenAI API for similar coding workflows. Consolidating to a single primary tool could reduce duplicated subscription and API spend.",
+      "evidence": "Engineering logged 8 active users on both Cursor and OpenAI API for coding workflows (88.9% user overlap, $1,752.34 overlapping spend, 11,845 vs 84 requests).",
+      "riskLevel": "medium",
+      "confidence": 0.84,
+      "estimatedMonthlySavings": 207.09,
+      "category": "tool-consolidation",
+      "i18nParams": {
+        "team": "Engineering",
+        "toolA": "Cursor",
+        "toolB": "OpenAI API",
+        "usageType": "coding",
+        "overlapScore": 0.7
+      }
+    },
+    {
+      "id": "rec-overlap-engineering-coding-github-copilot-openai-api",
+      "title": "Consolidate overlapping coding tools for Engineering",
+      "description": "Engineering uses both GitHub Copilot and OpenAI API for similar coding workflows. Consolidating to a single primary tool could reduce duplicated subscription and API spend.",
+      "evidence": "Engineering logged 9 active users on both GitHub Copilot and OpenAI API for coding workflows (100% user overlap, $630.3 overlapping spend, 98,691 vs 84 requests).",
+      "riskLevel": "medium",
+      "confidence": 0.78,
+      "estimatedMonthlySavings": 57.3,
+      "category": "tool-consolidation",
+      "i18nParams": {
+        "team": "Engineering",
+        "toolA": "GitHub Copilot",
+        "toolB": "OpenAI API",
+        "usageType": "coding",
+        "overlapScore": 0.6
+      }
+    },
+    {
+      "id": "rec-overlap-engineering-automation-cursor-openai-api",
+      "title": "Consolidate overlapping automation tools for Engineering",
+      "description": "Engineering uses both OpenAI API and Cursor for similar automation workflows. Consolidating to a single primary tool could reduce duplicated subscription and API spend.",
+      "evidence": "Engineering logged 9 active users on both OpenAI API and Cursor for automation workflows (90% user overlap, $1,161.6 overlapping spend, 56 vs 33,382 requests).",
+      "riskLevel": "medium",
+      "confidence": 0.8,
+      "estimatedMonthlySavings": 105.6,
+      "category": "tool-consolidation",
+      "i18nParams": {
+        "team": "Engineering",
+        "toolA": "OpenAI API",
+        "toolB": "Cursor",
+        "usageType": "automation",
+        "overlapScore": 0.6
       }
     }
   ]
