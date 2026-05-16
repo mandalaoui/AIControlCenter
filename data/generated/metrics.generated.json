@@ -23420,7 +23420,7 @@
       "roi": 3613.2,
       "cpt": 0.13,
       "efficiencyScore": 89.7,
-      "topTool": "Cursor",
+      "topTool": "GitHub Copilot",
       "activeUsers": 8,
       "wasteRatio": 0
     },
@@ -23430,7 +23430,7 @@
       "roi": 2391,
       "cpt": 0.15,
       "efficiencyScore": 88.1,
-      "topTool": "Cursor",
+      "topTool": "GitHub Copilot",
       "activeUsers": 22,
       "wasteRatio": 0
     },
@@ -23440,7 +23440,7 @@
       "roi": 2380.4,
       "cpt": 0.16,
       "efficiencyScore": 88.6,
-      "topTool": "Cursor",
+      "topTool": "GitHub Copilot",
       "activeUsers": 10,
       "wasteRatio": 0
     },
@@ -23450,7 +23450,7 @@
       "roi": 3264.3,
       "cpt": 0.14,
       "efficiencyScore": 87.9,
-      "topTool": "Cursor",
+      "topTool": "GitHub Copilot",
       "activeUsers": 14,
       "wasteRatio": 0
     },
@@ -23460,7 +23460,7 @@
       "roi": 2431.2,
       "cpt": 0.17,
       "efficiencyScore": 88.1,
-      "topTool": "Cursor",
+      "topTool": "GitHub Copilot",
       "activeUsers": 10,
       "wasteRatio": 0
     },
@@ -23470,7 +23470,7 @@
       "roi": 2794.5,
       "cpt": 0.15,
       "efficiencyScore": 89.6,
-      "topTool": "Cursor",
+      "topTool": "GitHub Copilot",
       "activeUsers": 10,
       "wasteRatio": 0
     }

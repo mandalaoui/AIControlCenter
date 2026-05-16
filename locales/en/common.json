@@ -54,6 +54,48 @@
     "slack": "Slack",
     "cursor": "Cursor"
   },
+  "roiMetricHelp": {
+    "estimatedROI": {
+      "title": "Estimated ROI",
+      "formula": "((hoursSaved × $75 − cost) / cost) × 100",
+      "purpose": "Primary value indicator"
+    },
+    "aiEfficiencyScore": {
+      "title": "AI Efficiency Score",
+      "formula": "ROI×40% + successRate×30% + modelFit×20% + seatUtil×10%",
+      "purpose": "Composite 0–100 score"
+    },
+    "wasteRatio": {
+      "title": "Waste Ratio",
+      "formula": "costOfLowROILogs / totalCost",
+      "purpose": "Spend on unproductive usage"
+    },
+    "costPerTask": {
+      "title": "Cost per Task",
+      "formula": "cost / successfulTasks",
+      "purpose": "Cost efficiency"
+    },
+    "hoursSaved": {
+      "title": "Hours Saved",
+      "formula": "Σ estimatedHoursSaved",
+      "purpose": "Total estimated productivity gain"
+    },
+    "costSavingsOpportunity": {
+      "title": "Cost Savings Opportunity",
+      "formula": "unusedSeats × monthlySeatCost",
+      "purpose": "Actionable savings estimate"
+    },
+    "modelMismatchRate": {
+      "title": "Model Mismatch Rate",
+      "formula": "(high-tier calls with complexityScore < 4) / total",
+      "purpose": "Routing efficiency"
+    },
+    "seatUtilization": {
+      "title": "Seat Utilization",
+      "formula": "activeSeats / totalSeats",
+      "purpose": "License efficiency"
+    }
+  },
   "spendLines": {
     "openai": "OpenAI",
     "anthropic": "Anthropic",
@@ -106,7 +148,7 @@
     "mid": "Mid",
     "low": "Low"
   },
-  "topTool": "Top tool",
+  "topTool": "Primary AI tool",
   "taskSuccessRate": "Task success rate",
   "toolComparison": "Tool comparison",
   "tool": "Tool",

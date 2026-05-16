@@ -119,7 +119,7 @@ export function getModelMismatchRate(
     (log) =>
       HIGH_COMPLEXITY_MODELS.includes(log.model) &&
       log.complexityScore <
-        COMPLEXITY_MISMATCH_THRESHOLD,
+      COMPLEXITY_MISMATCH_THRESHOLD,
   ).length;
 
   return roundPercent(
@@ -189,9 +189,9 @@ export function calculateEfficiencyScore(
     Math.min(
       100,
       roiScore +
-        successScore +
-        modelFitComponent +
-        seatScore,
+      successScore +
+      modelFitComponent +
+      seatScore,
     ),
   );
 }
@@ -238,8 +238,8 @@ function getIsoWeek(
 
   target.setUTCDate(
     target.getUTCDate() -
-      dayNumber +
-      3,
+    dayNumber +
+    3,
   );
 
   const firstThursday = new Date(
@@ -258,7 +258,7 @@ function getIsoWeek(
           target.getTime() -
           firstThursday.getTime()
         ) /
-          86_400_000 -
+        86_400_000 -
         3 +
         (
           (
@@ -349,18 +349,33 @@ export function getTeamSummaries(logs: UsageLog[]): TeamSummary[] {
     const wasteRatio = calculateWasteRatio(teamLogs);
     const activeUsers = new Set(teamLogs.map((log) => log.user)).size;
 
-    const toolSpend = new Map<Tool, number>();
-    for (const log of teamLogs) {
-      toolSpend.set(
-        log.tool,
-        (toolSpend.get(log.tool) ?? 0) + log.cost,
-      );
+    const toolUsage = new Map<Tool, {users: number; requests: number;}>();
+
+    for (const tool of new Set(teamLogs.map((log) => log.tool))) {
+      const logsForTool = teamLogs.filter((log) => log.tool === tool);
+
+      const users = new Set(logsForTool.map((log) => log.user)).size;
+
+      const requests = logsForTool.reduce((sum, log) => sum + log.requests, 0);
+
+      toolUsage.set(tool, {
+        users,
+        requests,
+      });
     }
 
     const topTool =
-      [...toolSpend.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ??
+      [...toolUsage.entries()]
+        .sort((a, b) => {
+          if (b[1].users !== a[1].users) {
+            return b[1].users - a[1].users;
+          }
+
+          return b[1].requests - a[1].requests;
+        })[0]?.[0] ??
       teamLogs[0]?.tool ??
       "OpenAI API";
+ 
 
     const modelFit = 1 - getModelMismatchRate(teamLogs);
     const efficiencyScore = calculateEfficiencyScore(
@@ -428,11 +443,11 @@ export function getModelFitAnalysis(logs: UsageLog[]): ModelSummary[] {
       modelLogs.length === 0
         ? 0
         : roundScore(
-            modelLogs.reduce(
-              (sum, log) => sum + log.complexityScore,
-              0,
-            ) / modelLogs.length,
-          );
+          modelLogs.reduce(
+            (sum, log) => sum + log.complexityScore,
+            0,
+          ) / modelLogs.length,
+        );
     const mismatchRate = getModelMismatchRate(modelLogs);
 
     return {
@@ -507,7 +522,7 @@ function detectAnomalies(
         affectedEntity: tool.name,
         week: getIsoWeek(
           logs[logs.length - 1]?.date ??
-            new Date().toISOString(),
+          new Date().toISOString(),
         ),
         params: {
           tool: tool.name,
@@ -684,7 +699,7 @@ function getOptimizationRecommendations(
       confidence: 0.88,
       estimatedMonthlySavings: roundMoney(
         (slack.totalSeats - slack.activeSeats) *
-          (SEAT_MONTHLY_COST["Slack AI"] ?? 12),
+        (SEAT_MONTHLY_COST["Slack AI"] ?? 12),
       ),
       category: "seat-reduction",
       i18nParams: {
@@ -914,13 +929,13 @@ export function filterUsageLogs(
     if (
       filters.month !== "all" &&
       !log.date.startsWith(filters.month)
-    ) 
-    if (
-      filters.month !== "all" &&
-      !log.date.startsWith(filters.month)
-    ) {
-      return false;
-    }
+    )
+      if (
+        filters.month !== "all" &&
+        !log.date.startsWith(filters.month)
+      ) {
+        return false;
+      }
     if (filters.model !== "all" && log.model !== filters.model) {
       return false;
     }
@@ -1038,9 +1053,9 @@ function categorizeUsageLog(
     Math.min(
       0.98,
       0.7 +
-        (successRate > 0.6 ? 0.1 : 0) +
-        (isMismatch ? 0.12 : 0) +
-        (roi > 100 ? 0.08 : 0),
+      (successRate > 0.6 ? 0.1 : 0) +
+      (isMismatch ? 0.12 : 0) +
+      (roi > 100 ? 0.08 : 0),
     ),
   );
 
@@ -1116,11 +1131,11 @@ export function getTeamDetailCards(
       teamLogs.length === 0
         ? 0
         : roundScore(
-            teamLogs.reduce(
-              (sum, log) => sum + log.complexityScore,
-              0,
-            ) / teamLogs.length,
-          );
+          teamLogs.reduce(
+            (sum, log) => sum + log.complexityScore,
+            0,
+          ) / teamLogs.length,
+        );
 
     return {
       ...team,

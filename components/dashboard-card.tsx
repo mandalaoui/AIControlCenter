@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface DashboardCardProps {
-  title: string;
+  title: ReactNode;
   badge?: ReactNode;
   action?: ReactNode;
   children: ReactNode;

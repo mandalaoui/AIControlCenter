@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { DashboardCard } from "@/components/dashboard-card";
 import { translateEntity, translateTool } from "@/lib/i18n/labels";
-import { formatCurrency, formatNumber, formatRoiDisplay } from "@/lib/format";
+import { formatCurrency, formatCurrencyPrecise, formatNumber, formatRoiDisplay } from "@/lib/format";
 import type { TeamDetailCard } from "@/lib/types";
 
 interface TeamCardProps {
@@ -36,7 +36,7 @@ export function TeamCard({ team }: TeamCardProps) {
         <div>
           <dt className="text-muted-foreground">{t("costPerTask")}</dt>
           <dd className="font-semibold">
-            {formatCurrency(team.cpt)}
+            {formatCurrencyPrecise(team.cpt)}
           </dd>
         </div>
         <div>
