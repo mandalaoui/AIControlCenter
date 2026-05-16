@@ -9,17 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
-const dateRanges = [
-  { value: "7d", labelKey: "last7Days" },
-  { value: "30d", labelKey: "last30Days" },
-  { value: "90d", labelKey: "last90Days" },
-  { value: "year", labelKey: "thisYear" },
-] as const;
-
 export function TopBar() {
   const { t } = useTranslation("common");
   const { theme, setTheme } = useTheme();
-  const [dateRange, setDateRange] = useState("30d");
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-6">
@@ -31,22 +23,6 @@ export function TopBar() {
             placeholder={t("search")}
             className="ps-10"
           />
-        </div>
-
-        <div className="relative">
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            aria-label={t("dateRange")}
-            className="appearance-none rounded-lg border border-border bg-input-background py-2 pe-10 ps-4 text-sm text-foreground"
-          >
-            {dateRanges.map((range) => (
-              <option key={range.value} value={range.value}>
-                {t(range.labelKey)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute inset-e-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         </div>
       </div>
 
