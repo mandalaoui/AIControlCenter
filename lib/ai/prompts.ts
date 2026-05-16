@@ -27,36 +27,6 @@ export function buildAnalyzeSystemPrompt(period: string): string {
 Analyze the provided DashboardContext JSON for period ${period}.
 Write all user-facing text in English.
 
-Return ONLY valid JSON (no markdown fences) matching this schema:
-{
-  "insights": [
-    {
-      "id": "string",
-      "type": "anomaly" | "trend" | "recommendation" | "risk",
-      "severity": "info" | "warning" | "critical",
-      "title": "string",
-      "description": "string",
-      "affectedEntity": "string",
-      "estimatedSavings": number (optional),
-      "confidence": number between 0 and 1,
-      "recommendedAction": "string"
-    }
-  ],
-  "recommendations": [
-    {
-      "id": "string",
-      "title": "string",
-      "description": "string",
-      "evidence": "string",
-      "riskLevel": "low" | "medium" | "high",
-      "confidence": number between 0 and 1,
-      "estimatedMonthlySavings": number,
-      "category": "model-switch" | "seat-reduction" | "workflow" | "tool-consolidation"
-    }
-  ],
-  "executiveSummary": "string (2-3 sentences)"
-}
-
 Rules:
 - Use only facts from the provided data
 - Produce 4-6 insights and 3-5 recommendations

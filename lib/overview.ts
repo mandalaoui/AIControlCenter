@@ -1,4 +1,4 @@
-import { formatCurrency, formatNumber } from "@/lib/format";
+import { formatCurrency, formatCurrencyPrecise, formatNumber } from "@/lib/format";
 import {
   calculateCPT,
   calculateEfficiencyScore,
@@ -181,7 +181,7 @@ function buildKpiInsight(
       return {
         insightKey: "kpiInsights.cpt",
         insightParams: {
-          cpt: formatCurrency(kpis.costPerSuccessfulTask),
+          cpt: formatCurrencyPrecise(kpis.costPerSuccessfulTask),
           team: lowestTeam?.name ?? "Marketing",
         },
       };

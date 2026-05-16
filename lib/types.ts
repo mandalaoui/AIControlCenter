@@ -137,6 +137,7 @@ export interface AnomalySummary {
   id?: string;
   description: string;
   magnitude: string;
+  severityLevel?: "warning" | "critical";
   affectedEntity: string;
   week: string;
   params?: Record<string, string | number>;
@@ -319,13 +320,14 @@ export interface CategorizedUsageLog extends UsageLog {
   categorization: AICategorizationResult;
 }
 
-export type CostBreakdownDimension = "team" | "tool" | "month";
+export type CostBreakdownDimension = "team" | "tool" | "month" | "model";
 
 export interface CostAnalyticsFilters {
   dimension: CostBreakdownDimension;
   team: Team | "all";
   tool: Tool | "all";
   month: string | "all";
+  model: Model | "all";
 }
 
 export interface CostBreakdownRow {

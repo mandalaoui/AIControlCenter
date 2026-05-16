@@ -289,5 +289,6 @@
   "apiKeyHint": "Used for AI Insights, Optimization Center, Query Assistant, and AI News.",
   "apiKeyUiOnly": "UI preview only — production keys belong in server environment variables.",
   "saveSettings": "Save settings",
-  "settingsSaved": "Settings saved"
+  "settingsSaved": "Settings saved",
+  "allModels": "All models"
 }

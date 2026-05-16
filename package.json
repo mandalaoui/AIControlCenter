@@ -8,13 +8,12 @@
     "start": "next start",
     "generate:telemetry": "tsx scripts/generate-telemetry.ts",
     "generate:metrics": "tsx scripts/generate-metrics.ts",
-
-    "generate:data":
-      "npm run generate:telemetry && npm run generate:metrics"
+    "generate:data": "npm run generate:telemetry && npm run generate:metrics"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.78",
     "@ai-sdk/google": "^3.0.75",
+    "@ai-sdk/groq": "^3.0.39",
     "@ai-sdk/openai": "^3.0.64",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-scroll-area": "^1.2.2",

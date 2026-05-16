@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { AiInsightBox } from "@/components/overview/ai-insight-box";
 import {
   formatCurrency,
+  formatCurrencyPrecise,
   formatNumber,
   formatPercentChange,
   formatRoiDisplay,
@@ -29,6 +30,7 @@ const KPI_TITLE_KEYS: Record<KpiCardData["id"], string> = {
 function formatKpiValue(kpi: KpiCardData): string {
   switch (kpi.format) {
     case "currency":
+      if (kpi.id === "cpt") return formatCurrencyPrecise(kpi.value);
       return formatCurrency(kpi.value);
     case "percent":
       return formatRoiDisplay(kpi.value);

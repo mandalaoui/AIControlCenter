@@ -1,21 +1,10 @@
 import { toolsDirectory } from "@/data/tools-directory";
 import type { AITool, AnalyticsData, Tool } from "@/lib/types";
-
-const TOOL_ID_TO_NAME: Record<string, Tool> = {
-  "openai-api": "OpenAI API",
-  "anthropic-api": "Anthropic API",
-  "github-copilot": "GitHub Copilot",
-  cursor: "Cursor",
-  "microsoft-copilot": "Microsoft Copilot",
-  "slack-ai": "Slack AI",
-  "google-gemini": "Google Gemini",
-  "internal-agent": "Internal Agent",
-};
+import { TOOL_BY_ID } from "./tool-registry";
 
 function resolveToolName(toolId: string): Tool | undefined {
-  return TOOL_ID_TO_NAME[toolId];
+  return TOOL_BY_ID[toolId]?.name;
 }
-
 export function getToolSpend(toolId: string, analyticsData: AnalyticsData): number {
   const toolName = resolveToolName(toolId);
   if (!toolName) {

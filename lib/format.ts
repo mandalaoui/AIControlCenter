@@ -21,10 +21,10 @@ export function formatCurrency(value: number): string {
 }
 
 export function formatRoiDisplay(roi: number): string {
-  if (roi >= 999) {
-    return "999%+";
+  if (roi >= 10000) {
+    return "10,000%+";
   }
-  return `${roundPercent(roi)}%`;
+  return `${roundPercent(roi).toLocaleString()}%`;
 }
 
 export function formatNumber(value: number, decimals = 0): string {
@@ -40,4 +40,12 @@ export function formatScore(value: number): string {
 
 export function formatPercentChange(value: number): string {
   return `${Math.abs(roundPercent(value))}%`;
+}
+
+export function formatCurrencyPrecise(value: number): string {
+  const rounded = roundMoney(value);
+  return `$${rounded.toLocaleString(getIntlLocale(), {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }

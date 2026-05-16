@@ -1,23 +1,19 @@
+import { unstable_cache } from "next/cache";
+import { revalidateTag } from "next/cache";
+import { fetchAiNews } from "@/lib/ai/clients/news-client";
 import type { AiNewsResponse } from "@/lib/types";
 
-const CACHE_TTL_MS = 60 * 60 * 1000;
+const CACHE_TTL_SECONDS = 60 * 60;
 
-let cachedNews: AiNewsResponse | null = null;
-let cacheExpiresAt = 0;
-
-export function getCachedNews(): AiNewsResponse | null {
-  if (!cachedNews || Date.now() >= cacheExpiresAt) {
-    return null;
-  }
-  return { ...cachedNews, fromCache: true };
-}
-
-export function setCachedNews(response: AiNewsResponse): void {
-  cachedNews = response;
-  cacheExpiresAt = Date.now() + CACHE_TTL_MS;
-}
+export const getCachedNews: () => Promise<AiNewsResponse> = unstable_cache(
+  async () => {
+    const result = await fetchAiNews();
+    return { ...result, fromCache: false };
+  },
+  ["ai-news"],
+  { revalidate: CACHE_TTL_SECONDS, tags: ["ai-news"] },
+);
 
 export function clearNewsCache(): void {
-  cachedNews = null;
-  cacheExpiresAt = 0;
+  revalidateTag("ai-news", "page");
 }

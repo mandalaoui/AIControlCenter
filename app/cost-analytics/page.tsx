@@ -2,12 +2,13 @@ import { CostAnalyticsContent } from "@/components/cost-analytics/cost-analytics
 import { DeferredContent } from "@/components/shared/deferred-content";
 import { ChartGridSkeleton, PageHeaderSkeleton } from "@/components/shared/page-skeletons";
 import { computeAnalyticsData, loadUsageLogs } from "@/lib/analytics";
-import type { Team, Tool } from "@/lib/types";
+import type { Model, Team, Tool } from "@/lib/types";
 
 export default function CostAnalyticsPage() {
   const data = computeAnalyticsData();
   const teams = [...new Set(data.logs.map((log) => log.team))] as Team[];
   const tools = [...new Set(data.logs.map((log) => log.tool))] as Tool[];
+  const models = [...new Set(data.logs.map((log) => log.model))] as Model[];
 
   return (
     <DeferredContent
@@ -22,6 +23,7 @@ export default function CostAnalyticsPage() {
         logs={loadUsageLogs()}
         teams={teams.sort()}
         tools={tools.sort()}
+        models={models.sort()}
       />
     </DeferredContent>
   );

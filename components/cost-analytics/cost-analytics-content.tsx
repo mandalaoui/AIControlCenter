@@ -15,18 +15,21 @@ import type {
   Team,
   Tool,
   UsageLog,
+  Model
 } from "@/lib/types";
 
 interface CostAnalyticsContentProps {
   logs: UsageLog[];
   teams: Team[];
   tools: Tool[];
+  models: Model[];
 }
 
 export function CostAnalyticsContent({
   logs,
   teams,
   tools,
+  models
 }: CostAnalyticsContentProps) {
   const { t } = useTranslation("common");
   const months = useMemo(() => getAvailableMonths(logs), [logs]);
@@ -36,6 +39,7 @@ export function CostAnalyticsContent({
     team: "all",
     tool: "all",
     month: "all",
+    model: "all",
   });
 
   const rows = useMemo(
@@ -65,6 +69,7 @@ export function CostAnalyticsContent({
               { value: "team", label: t("teams") },
               { value: "tool", label: t("tool") },
               { value: "month", label: t("month") },
+              { value: "model", label: t("model") },
             ]}
           />
           <FilterSelect
@@ -92,6 +97,15 @@ export function CostAnalyticsContent({
             options={[
               { value: "all", label: t("allMonths") },
               ...months.map((month) => ({ value: month, label: month })),
+            ]}
+          />
+          <FilterSelect
+            label={t("model")}
+            value={filters.model}
+            onChange={(value) => update("model", value as Model | "all")}
+            options={[
+              { value: "all", label: t("allModels") },
+              ...models.map((model) => ({ value: model, label: model })),
             ]}
           />
         </div>

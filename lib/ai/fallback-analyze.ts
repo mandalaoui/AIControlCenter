@@ -11,7 +11,7 @@ export function buildFallbackAnalyzeResponse(
   const insights: AIInsight[] = data.anomalies.map((anomaly, index) => ({
     id: `fallback-insight-${index}`,
     type: "anomaly",
-    severity: anomaly.magnitude.includes("3") ? "critical" : "warning",
+    severity: anomaly.severityLevel ?? "warning",
     title: `${anomaly.affectedEntity}: ${anomaly.magnitude}`,
     description: anomaly.description,
     affectedEntity: anomaly.affectedEntity,

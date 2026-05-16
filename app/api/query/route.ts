@@ -5,10 +5,10 @@ import {
   HISTORY_MAX_MESSAGES,
 } from "@/lib/ai/constants";
 import {
-  hasClaudeApiKey,
-  queryWithClaude,
+  hasLlmApiKey,
+  queryWithLlm,
   sanitizeQueryHistory,
-} from "@/lib/ai/claude-client";
+} from "@/lib/ai/clients/llm-client";
 import { formatConversationHistory } from "@/lib/ai/prompts";
 import {
   buildDashboardContext,
@@ -104,12 +104,14 @@ export async function POST(request: Request) {
       HISTORY_MAX_MESSAGES,
       HISTORY_MAX_CHARS,
     );
+    console.log("API KEY EXISTS:", hasLlmApiKey());
 
-    if (hasClaudeApiKey()) {
+    if (hasLlmApiKey()) {
       try {
-        const answer = await queryWithClaude(context, question, historyPrefix);
+        const answer = await queryWithLlm(context, question, historyPrefix);
         return NextResponse.json({ answer });
-      } catch {
+      } catch (err) {
+        console.error("LLM query failed:", err);
         return NextResponse.json({
           answer: buildFallbackAnswer(question),
         });

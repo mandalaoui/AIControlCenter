@@ -49,18 +49,29 @@ export function SpendByProviderChart({ data }: SpendByProviderChartProps) {
     fill: `var(--color-${item.providerKey})`,
   }));
 
+  // Debug logs
+  console.log("pieData", pieData);
+  console.log("chartConfig", chartConfig);
+
   return (
     <DashboardCard title={t("spendByProvider")}>
       <div className="relative">
         <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
           <PieChart>
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  formatter={(value) => formatCurrency(Number(value))}
-                />
-              }
-            />
+          <ChartTooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const item = payload[0];
+              const providerKey = item.payload.providerKey as string;
+              const label = chartConfig[providerKey]?.label ?? providerKey;
+              return (
+                <div className="rounded-md border border-border bg-popover px-3 py-2 text-sm shadow-md">
+                  <p className="font-medium text-foreground">{label}</p>
+                  <p className="text-muted-foreground">{formatCurrency(Number(item.value))}</p>
+                </div>
+              );
+            }}
+          />
             <Pie
               data={pieData}
               dataKey="value"
@@ -72,7 +83,12 @@ export function SpendByProviderChart({ data }: SpendByProviderChartProps) {
               paddingAngle={2}
             >
               {pieData.map((entry) => (
-                <Cell key={entry.providerKey} fill={entry.fill} />
+                <Cell
+                  key={entry.providerKey}
+                  fill={`var(--color-${entry.providerKey})`}
+                  stroke="var(--border)"
+                  strokeWidth={1}
+                />
               ))}
             </Pie>
           </PieChart>

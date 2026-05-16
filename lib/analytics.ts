@@ -27,10 +27,17 @@ import type {
   UsageLog,
   UserSpendSummary,
 } from "@/lib/types";
+import {
+  TOOL_PROVIDER_KEY,
+  SEAT_BASED_TOOLS,
+  SEAT_MONTHLY_COST,
+  type SpendLineKey,
+} from "./tool-registry";
 
 const HOURLY_RATE = 75;
 const LOW_ROI_THRESHOLD = 50;
 const COMPLEXITY_MISMATCH_THRESHOLD = 4;
+const HOURS_SAVED_CAP_PER_LOG = 8;
 
 // Prevents unrealistic ROI explosions on tiny costs.
 const MINIMUM_EFFECTIVE_COST = 10;
@@ -40,20 +47,6 @@ const HIGH_COMPLEXITY_MODELS: Model[] = [
   "GPT-4",
   "Gemini Ultra",
 ];
-
-const SEAT_BASED_TOOLS: Partial<Record<Tool, number>> = {
-  Cursor: 52,
-  "GitHub Copilot": 60,
-  "Microsoft Copilot": 55,
-  "Slack AI": 50,
-};
-
-const SEAT_MONTHLY_COST: Partial<Record<Tool, number>> = {
-  Cursor: 32,
-  "GitHub Copilot": 19,
-  "Microsoft Copilot": 30,
-  "Slack AI": 12,
-};
 
 export function roundMoney(value: number): number {
   if (value > 0 && value < 0.01) {
@@ -69,6 +62,10 @@ export function roundPercent(value: number): number {
 
 export function roundScore(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+function cappedHours(log: UsageLog): number {
+  return Math.min(log.estimatedHoursSaved, HOURS_SAVED_CAP_PER_LOG);
 }
 
 export function loadUsageLogs(): UsageLog[] {
@@ -215,7 +212,7 @@ export function calculateWasteRatio(
     .filter(
       (log) =>
         calculateROI(
-          log.estimatedHoursSaved,
+          Math.min(log.estimatedHoursSaved, HOURS_SAVED_CAP_PER_LOG),
           log.cost,
         ) < LOW_ROI_THRESHOLD,
     )
@@ -291,27 +288,6 @@ const MODEL_TIER: Record<Model, string> = {
   "N/A": "low",
 };
 
-const TOOL_PROVIDER_KEY: Record<Tool, string> = {
-  "OpenAI API": "openai",
-  "Anthropic API": "anthropic",
-  "GitHub Copilot": "github",
-  Cursor: "cursor",
-  "Microsoft Copilot": "microsoft",
-  "Slack AI": "slack",
-  "Google Gemini": "google",
-  "Internal Agent": "internal",
-};
-
-export const SPEND_LINE_KEYS = [
-  "openai",
-  "anthropic",
-  "github",
-  "microsoft",
-  "other",
-] as const;
-
-type SpendLineKey = (typeof SPEND_LINE_KEYS)[number];
-
 function mapToolSpendToLineKey(toolName: Tool): SpendLineKey {
   const provider = TOOL_PROVIDER_KEY[toolName];
   if (provider === "openai") return "openai";
@@ -362,8 +338,7 @@ export function getTeamSummaries(logs: UsageLog[]): TeamSummary[] {
       teamLogs.reduce((sum, log) => sum + log.cost, 0),
     );
     const hoursSaved = teamLogs.reduce(
-      (sum, log) => sum + log.estimatedHoursSaved,
-      0,
+      (sum, log) => sum + cappedHours(log), 0,
     );
     const successfulTasks = teamLogs.reduce(
       (sum, log) => sum + log.successfulTasks,
@@ -417,8 +392,7 @@ export function getToolSummaries(logs: UsageLog[]): ToolSummary[] {
       toolLogs.reduce((sum, log) => sum + log.cost, 0),
     );
     const hoursSaved = toolLogs.reduce(
-      (sum, log) => sum + log.estimatedHoursSaved,
-      0,
+      (sum, log) => sum + cappedHours(log), 0,
     );
     const roi = calculateROI(hoursSaved, spend);
     const activeSeats = new Set(toolLogs.map((log) => log.user)).size;
@@ -587,8 +561,7 @@ function getUserSummaries(logs: UsageLog[]): UserSpendSummary[] {
       userLogs.reduce((sum, log) => sum + log.cost, 0),
     );
     const hoursSaved = userLogs.reduce(
-      (sum, log) => sum + log.estimatedHoursSaved,
-      0,
+      (sum, log) => sum + cappedHours(log), 0,
     );
     const roi = calculateROI(hoursSaved, spend);
 
@@ -795,8 +768,7 @@ export function computeAnalyticsData(
     logs.reduce((sum, log) => sum + log.cost, 0),
   );
   const hoursSaved = logs.reduce(
-    (sum, log) => sum + log.estimatedHoursSaved,
-    0,
+    (sum, log) => sum + cappedHours(log), 0,
   );
   const successfulTasks = logs.reduce(
     (sum, log) => sum + log.successfulTasks,
@@ -942,7 +914,14 @@ export function filterUsageLogs(
     if (
       filters.month !== "all" &&
       !log.date.startsWith(filters.month)
+    ) 
+    if (
+      filters.month !== "all" &&
+      !log.date.startsWith(filters.month)
     ) {
+      return false;
+    }
+    if (filters.model !== "all" && log.model !== filters.model) {
       return false;
     }
     return true;
@@ -958,8 +937,7 @@ function summarizeLogs(logs: UsageLog[]): {
     logs.reduce((sum, log) => sum + log.cost, 0),
   );
   const hoursSaved = logs.reduce(
-    (sum, log) => sum + log.estimatedHoursSaved,
-    0,
+    (sum, log) => sum + cappedHours(log), 0,
   );
 
   return {
@@ -991,6 +969,9 @@ export function getCostBreakdown(
         break;
       case "month":
         key = log.date.slice(0, 7);
+        break;
+      case "model":
+        key = log.model;
         break;
     }
 
@@ -1198,8 +1179,7 @@ export function getModelUsageRows(
         (log) => log.model === model.name,
       );
       const hoursSaved = modelLogs.reduce(
-        (sum, log) => sum + log.estimatedHoursSaved,
-        0,
+        (sum, log) => sum + cappedHours(log), 0,
       );
       const requests = modelLogs.reduce(
         (sum, log) => sum + log.requests,

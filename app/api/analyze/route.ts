@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { buildFallbackAnalyzeResponse } from "@/lib/ai/fallback-analyze";
-import { analyzeWithClaude, hasClaudeApiKey } from "@/lib/ai/claude-client";
+import { analyzeWithLlm, hasLlmApiKey } from "@/lib/ai/clients/llm-client";
 import {
   buildDashboardContext,
   computeAnalyticsData,
@@ -23,9 +23,9 @@ export async function POST(request: Request) {
       context = buildDashboardContext(analytics);
     }
 
-    if (hasClaudeApiKey()) {
+    if (hasLlmApiKey()) {
       try {
-        const result = await analyzeWithClaude(context);
+        const result = await analyzeWithLlm(context);
         return NextResponse.json(result);
       } catch {
         const analytics = computeAnalyticsData();

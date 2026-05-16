@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/chart";
 import { getChartMargin } from "@/lib/i18n/chart-layout";
 import { formatCurrency } from "@/lib/format";
-import { SPEND_LINE_KEYS } from "@/lib/analytics";
+import { SPEND_LINE_KEYS } from "@/lib/tool-registry";
 import type { SpendOverTimePoint } from "@/lib/types";
 
 function buildLineConfig(t: (key: string) => string): ChartConfig {
