@@ -9,12 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
-const workspaces = [
-  { value: "acme", labelKey: "acmeCorp" },
-  { value: "beta", labelKey: "betaIndustries" },
-  { value: "gamma", labelKey: "gammaSolutions" },
-] as const;
-
 const dateRanges = [
   { value: "7d", labelKey: "last7Days" },
   { value: "30d", labelKey: "last30Days" },
@@ -25,28 +19,11 @@ const dateRanges = [
 export function TopBar() {
   const { t } = useTranslation("common");
   const { theme, setTheme } = useTheme();
-  const [workspace, setWorkspace] = useState("acme");
   const [dateRange, setDateRange] = useState("30d");
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-6">
       <div className="flex flex-1 items-center gap-4">
-        <div className="relative">
-          <select
-            value={workspace}
-            onChange={(e) => setWorkspace(e.target.value)}
-            aria-label={t("workspace")}
-            className="appearance-none rounded-lg border border-border bg-input-background py-2 pe-10 ps-4 text-sm font-medium text-foreground"
-          >
-            {workspaces.map((ws) => (
-              <option key={ws.value} value={ws.value}>
-                {t(ws.labelKey)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute inset-e-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        </div>
-
         <div className="relative max-w-md flex-1">
           <Search className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input

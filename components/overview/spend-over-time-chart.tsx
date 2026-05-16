@@ -2,7 +2,6 @@
 
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   XAxis,
@@ -21,7 +20,7 @@ import {
 } from "@/components/ui/chart";
 import { getChartMargin } from "@/lib/i18n/chart-layout";
 import { formatCurrency } from "@/lib/format";
-import { SPEND_LINE_KEYS } from "@/lib/overview";
+import { SPEND_LINE_KEYS } from "@/lib/analytics";
 import type { SpendOverTimePoint } from "@/lib/types";
 
 function buildLineConfig(t: (key: string) => string): ChartConfig {

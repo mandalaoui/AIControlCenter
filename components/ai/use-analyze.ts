@@ -24,7 +24,10 @@ export function useAnalyze(): UseAnalyzeResult {
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": window.localStorage.getItem("ai-control-center-api-key-demo") ?? "",
+        },
         body: JSON.stringify({}),
       });
       if (!response.ok) {

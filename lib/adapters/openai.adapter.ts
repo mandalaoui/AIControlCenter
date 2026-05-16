@@ -13,6 +13,7 @@ import {
   inferTaskCounts,
   generateLogId,
 } from "./shared"
+import { calculateCost } from "@/lib/pricing";
 
 // ─────────────────────────────────────────────────────────────
 // Raw type — OpenAI usage export
@@ -76,42 +77,6 @@ const PURPOSE_USAGE_MAP: Record<string, UsageType> = {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Pricing (per 1K tokens, USD) — OpenAI public rates
-// ─────────────────────────────────────────────────────────────
-
-const INPUT_COST: Record<Model, number> = {
-  "GPT-4":         0.03,
-  "GPT-4o":        0.005,
-  "GPT-4o-mini":   0.00015,
-  "GPT-3.5":       0.0005,
-  "Claude Opus":   0,
-  "Claude Sonnet": 0,
-  "Claude Haiku":  0,
-  "Gemini Pro":    0,
-  "Gemini Ultra":  0,
-  "N/A":           0,
-}
-
-const OUTPUT_COST: Record<Model, number> = {
-  "GPT-4":         0.06,
-  "GPT-4o":        0.015,
-  "GPT-4o-mini":   0.0006,
-  "GPT-3.5":       0.0015,
-  "Claude Opus":   0,
-  "Claude Sonnet": 0,
-  "Claude Haiku":  0,
-  "Gemini Pro":    0,
-  "Gemini Ultra":  0,
-  "N/A":           0,
-}
-
-function calculateCost(model: Model, inputTokens: number, outputTokens: number): number {
-  const cost = (inputTokens / 1000) * INPUT_COST[model]
-             + (outputTokens / 1000) * OUTPUT_COST[model]
-  return Math.round(cost * 100) / 100
-}
-
-// ─────────────────────────────────────────────────────────────
 // Finish reason → success signal
 // "length" = hit token limit = incomplete = failure
 // ─────────────────────────────────────────────────────────────
@@ -124,7 +89,7 @@ function isSuccessfulRequest(finishReason: OpenAIRawRecord["finish_reason"]): bo
 // Adapter
 // ─────────────────────────────────────────────────────────────
 
-export function adaptOpenAIRecord(raw: OpenAIRawRecord, index: number): UsageLog {
+export function adaptOpenAIRecord(raw: OpenAIRawRecord): UsageLog {
   const model        = OPENAI_MODEL_MAP[raw.model] ?? "GPT-4o"
   const usageType    = PURPOSE_USAGE_MAP[raw.purpose_tag] ?? "research"
   const inputTokens  = raw.prompt_tokens
@@ -134,7 +99,7 @@ export function adaptOpenAIRecord(raw: OpenAIRawRecord, index: number): UsageLog
   const { successfulTasks, totalTasks } = inferTaskCounts(1, usageType)
 
   return {
-    id:                  generateLogId("openai", index),
+    id:                  generateLogId("openai", raw.request_id),
     date:                raw.created_at,
     team:                raw.team_name as Team,
     user:                raw.user_display_name,
@@ -149,10 +114,10 @@ export function adaptOpenAIRecord(raw: OpenAIRawRecord, index: number): UsageLog
     estimatedHoursSaved: inferHoursSaved(outputTokens, usageType),
     successfulTasks:     success ? successfulTasks : 0,
     totalTasks,
-    complexityScore:     inferComplexityScore(model, usageType),
+    complexityScore:     inferComplexityScore(model, usageType, raw.request_id),
   }
 }
 
 export function adaptOpenAIRecords(records: OpenAIRawRecord[]): UsageLog[] {
-  return records.map((r, i) => adaptOpenAIRecord(r, i))
+  return records.map((r) => adaptOpenAIRecord(r))
 }

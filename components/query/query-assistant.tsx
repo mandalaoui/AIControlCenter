@@ -44,13 +44,11 @@ export function QueryAssistant() {
     try {
       const response = await fetch("/api/query", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question,
-          history: history.filter(
-            (m) => m.role === "user" || m.role === "assistant",
-          ),
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": window.localStorage.getItem("ai-control-center-api-key-demo") ?? "",
+        },
+        body: JSON.stringify({ question, history }),
       });
 
       if (!response.ok) {

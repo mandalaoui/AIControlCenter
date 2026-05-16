@@ -13,7 +13,7 @@ import {
   inferTaskCounts,
   generateLogId,
 } from "./shared"
-
+import { calculateCost } from "@/lib/pricing";
 // ─────────────────────────────────────────────────────────────
 // Raw type — what Anthropic API usage export looks like
 // ─────────────────────────────────────────────────────────────
@@ -69,42 +69,6 @@ const PURPOSE_USAGE_MAP: Record<string, UsageType> = {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Pricing (per 1K tokens, USD) — Anthropic public rates
-// ─────────────────────────────────────────────────────────────
-
-const INPUT_COST: Record<Model, number> = {
-  "Claude Opus":   0.015,
-  "Claude Sonnet": 0.003,
-  "Claude Haiku":  0.00025,
-  "GPT-4":         0,
-  "GPT-4o":        0,
-  "GPT-4o-mini":   0,
-  "GPT-3.5":       0,
-  "Gemini Pro":    0,
-  "Gemini Ultra":  0,
-  "N/A":           0,
-}
-
-const OUTPUT_COST: Record<Model, number> = {
-  "Claude Opus":   0.075,
-  "Claude Sonnet": 0.015,
-  "Claude Haiku":  0.00125,
-  "GPT-4":         0,
-  "GPT-4o":        0,
-  "GPT-4o-mini":   0,
-  "GPT-3.5":       0,
-  "Gemini Pro":    0,
-  "Gemini Ultra":  0,
-  "N/A":           0,
-}
-
-function calculateCost(model: Model, inputTokens: number, outputTokens: number): number {
-  const cost = (inputTokens / 1000) * INPUT_COST[model]
-             + (outputTokens / 1000) * OUTPUT_COST[model]
-  return Math.round(cost * 100) / 100
-}
-
-// ─────────────────────────────────────────────────────────────
 // Stop reason → success signal
 // max_tokens = incomplete = not a successful task
 // ─────────────────────────────────────────────────────────────
@@ -117,7 +81,7 @@ function isSuccessfulRequest(stopReason: AnthropicRawRecord["stop_reason"]): boo
 // Adapter
 // ─────────────────────────────────────────────────────────────
 
-export function adaptAnthropicRecord(raw: AnthropicRawRecord, index: number): UsageLog {
+export function adaptAnthropicRecord(raw: AnthropicRawRecord): UsageLog {
   const model        = ANTHROPIC_MODEL_MAP[raw.model] ?? "Claude Sonnet"
   const usageType    = PURPOSE_USAGE_MAP[raw.purpose_tag] ?? "research"
   const inputTokens  = raw.input_tokens + raw.cache_read_input_tokens
@@ -127,7 +91,7 @@ export function adaptAnthropicRecord(raw: AnthropicRawRecord, index: number): Us
   const { successfulTasks, totalTasks } = inferTaskCounts(1, usageType)
 
   return {
-    id:                  generateLogId("anthropic", index),
+    id:                  generateLogId("anthropic", raw.request_id),
     date:                raw.created_at,
     team:                raw.team_name as Team,
     user:                raw.user_display_name,
@@ -142,10 +106,10 @@ export function adaptAnthropicRecord(raw: AnthropicRawRecord, index: number): Us
     estimatedHoursSaved: inferHoursSaved(outputTokens, usageType),
     successfulTasks:     success ? successfulTasks : 0,
     totalTasks,
-    complexityScore:     inferComplexityScore(model, usageType),
+    complexityScore:     inferComplexityScore(model, usageType, raw.request_id),
   }
 }
 
 export function adaptAnthropicRecords(records: AnthropicRawRecord[]): UsageLog[] {
-  return records.map((r, i) => adaptAnthropicRecord(r, i))
+  return records.map((r) => adaptAnthropicRecord(r))
 }

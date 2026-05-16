@@ -1,5 +1,5 @@
-import mockLogs from "@/data/mock_logs.json";
-import mockMetrics from "@/data/mock_metrics.json";
+import generatedLogs from "@/data/generated/usage-logs.generated.json";
+
 import type {
   AICategorizationResult,
   AnalyticsData,
@@ -9,12 +9,15 @@ import type {
   CostAnalyticsFilters,
   CostBreakdownRow,
   DashboardContext,
+  ImpactLevel,
   LowProductivityUser,
   Model,
   ModelSummary,
   ModelUsageRow,
   OptimizationRecommendation,
+  ProductivityLevel,
   RoiEfficiencyMetrics,
+  SpendOverTimePoint,
   Team,
   TeamDetailCard,
   TeamSummary,
@@ -28,6 +31,9 @@ import type {
 const HOURLY_RATE = 75;
 const LOW_ROI_THRESHOLD = 50;
 const COMPLEXITY_MISMATCH_THRESHOLD = 4;
+
+// Prevents unrealistic ROI explosions on tiny costs.
+const MINIMUM_EFFECTIVE_COST = 10;
 
 const HIGH_COMPLEXITY_MODELS: Model[] = [
   "Claude Opus",
@@ -50,6 +56,10 @@ const SEAT_MONTHLY_COST: Partial<Record<Tool, number>> = {
 };
 
 export function roundMoney(value: number): number {
+  if (value > 0 && value < 0.01) {
+    return Number(value.toFixed(4));
+  }
+
   return Math.round(value * 100) / 100;
 }
 
@@ -62,7 +72,7 @@ export function roundScore(value: number): number {
 }
 
 export function loadUsageLogs(): UsageLog[] {
-  return mockLogs as UsageLog[];
+  return generatedLogs as UsageLog[];
 }
 
 export function calculateROI(
@@ -72,50 +82,91 @@ export function calculateROI(
   if (cost <= 0) {
     return 0;
   }
+
+  const effectiveCost = Math.max(
+    cost,
+    MINIMUM_EFFECTIVE_COST,
+  );
+
   return roundPercent(
-    ((estimatedHoursSaved * HOURLY_RATE - cost) / cost) * 100,
+    (
+      (
+        (estimatedHoursSaved * HOURLY_RATE) -
+        effectiveCost
+      ) / effectiveCost
+    ) * 100,
   );
 }
 
-export function calculateCPT(cost: number, successfulTasks: number): number {
+export function calculateCPT(
+  cost: number,
+  successfulTasks: number,
+): number {
   if (successfulTasks <= 0) {
     return 0;
   }
-  return roundMoney(cost / successfulTasks);
+
+  return roundMoney(
+    cost / successfulTasks,
+  );
 }
 
-export function getModelMismatchRate(logs: UsageLog[]): number {
+export function getModelMismatchRate(
+  logs: UsageLog[],
+): number {
   if (logs.length === 0) {
     return 0;
   }
+
   const mismatches = logs.filter(
     (log) =>
       HIGH_COMPLEXITY_MODELS.includes(log.model) &&
-      log.complexityScore < COMPLEXITY_MISMATCH_THRESHOLD,
+      log.complexityScore <
+        COMPLEXITY_MISMATCH_THRESHOLD,
   ).length;
-  return roundPercent((mismatches / logs.length) * 100) / 100;
+
+  return roundPercent(
+    (mismatches / logs.length) * 100,
+  ) / 100;
 }
 
-export function getSuccessRate(logs: UsageLog[]): number {
-  const totalTasks = logs.reduce((sum, log) => sum + log.totalTasks, 0);
+export function getSuccessRate(
+  logs: UsageLog[],
+): number {
+  const totalTasks = logs.reduce(
+    (sum, log) => sum + log.totalTasks,
+    0,
+  );
+
   const successfulTasks = logs.reduce(
     (sum, log) => sum + log.successfulTasks,
     0,
   );
+
   if (totalTasks === 0) {
     return 0;
   }
+
   return successfulTasks / totalTasks;
 }
 
-export function getAverageSeatUtilization(toolSummaries: ToolSummary[]): number {
-  const seatTools = toolSummaries.filter((tool) => tool.totalSeats > 0);
+export function getAverageSeatUtilization(
+  toolSummaries: ToolSummary[],
+): number {
+  const seatTools = toolSummaries.filter(
+    (tool) => tool.totalSeats > 0,
+  );
+
   if (seatTools.length === 0) {
     return 1;
   }
+
   return (
-    seatTools.reduce((sum, tool) => sum + tool.seatUtilization, 0) /
-    seatTools.length
+    seatTools.reduce(
+      (sum, tool) =>
+        sum + tool.seatUtilization,
+      0,
+    ) / seatTools.length
   );
 }
 
@@ -125,44 +176,181 @@ export function calculateEfficiencyScore(
   modelFitScore: number,
   seatUtilization: number,
 ): number {
-  const roiScore = Math.min(roi / 500, 1) * 40;
-  const successScore = successRate * 30;
-  const modelFitComponent = modelFitScore * 20;
-  const seatScore = seatUtilization * 10;
+  const roiScore =
+    Math.min(roi / 500, 1) * 40;
+
+  const successScore =
+    successRate * 30;
+
+  const modelFitComponent =
+    modelFitScore * 20;
+
+  const seatScore =
+    seatUtilization * 10;
+
   return roundScore(
-    Math.min(100, roiScore + successScore + modelFitComponent + seatScore),
+    Math.min(
+      100,
+      roiScore +
+        successScore +
+        modelFitComponent +
+        seatScore,
+    ),
   );
 }
 
-export function calculateWasteRatio(logs: UsageLog[]): number {
-  const totalCost = logs.reduce((sum, log) => sum + log.cost, 0);
+export function calculateWasteRatio(
+  logs: UsageLog[],
+): number {
+  const totalCost = logs.reduce(
+    (sum, log) => sum + log.cost,
+    0,
+  );
+
   if (totalCost === 0) {
     return 0;
   }
+
   const wasteCost = logs
     .filter(
       (log) =>
-        calculateROI(log.estimatedHoursSaved, log.cost) < LOW_ROI_THRESHOLD,
+        calculateROI(
+          log.estimatedHoursSaved,
+          log.cost,
+        ) < LOW_ROI_THRESHOLD,
     )
-    .reduce((sum, log) => sum + log.cost, 0);
-  return roundMoney(wasteCost / totalCost);
+    .reduce(
+      (sum, log) => sum + log.cost,
+      0,
+    );
+
+  return roundMoney(
+    wasteCost / totalCost,
+  );
 }
 
-function getIsoWeek(dateString: string): string {
+function getIsoWeek(
+  dateString: string,
+): string {
   const date = new Date(dateString);
+
   const target = new Date(date.valueOf());
-  const dayNumber = (date.getUTCDay() + 6) % 7;
-  target.setUTCDate(target.getUTCDate() - dayNumber + 3);
-  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+
+  const dayNumber =
+    (date.getUTCDay() + 6) % 7;
+
+  target.setUTCDate(
+    target.getUTCDate() -
+      dayNumber +
+      3,
+  );
+
+  const firstThursday = new Date(
+    Date.UTC(
+      target.getUTCFullYear(),
+      0,
+      4,
+    ),
+  );
+
   const week =
     1 +
     Math.round(
-      ((target.getTime() - firstThursday.getTime()) / 86_400_000 -
+      (
+        (
+          target.getTime() -
+          firstThursday.getTime()
+        ) /
+          86_400_000 -
         3 +
-        ((firstThursday.getUTCDay() + 6) % 7)) /
-        7,
+        (
+          (
+            firstThursday.getUTCDay() +
+            6
+          ) %
+          7
+        )
+      ) / 7,
     );
-  return `${target.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+
+  return `${target.getUTCFullYear()}-W${String(
+    week,
+  ).padStart(2, "0")}`;
+}
+
+const MODEL_TIER: Record<Model, string> = {
+  "Claude Opus": "high",
+  "GPT-4": "high",
+  "Gemini Ultra": "high",
+  "Claude Sonnet": "mid",
+  "GPT-4o": "mid",
+  "Gemini Pro": "mid",
+  "Claude Haiku": "low",
+  "GPT-4o-mini": "low",
+  "GPT-3.5": "low",
+  "N/A": "low",
+};
+
+const TOOL_PROVIDER_KEY: Record<Tool, string> = {
+  "OpenAI API": "openai",
+  "Anthropic API": "anthropic",
+  "GitHub Copilot": "github",
+  Cursor: "cursor",
+  "Microsoft Copilot": "microsoft",
+  "Slack AI": "slack",
+  "Google Gemini": "google",
+  "Internal Agent": "internal",
+};
+
+export const SPEND_LINE_KEYS = [
+  "openai",
+  "anthropic",
+  "github",
+  "microsoft",
+  "other",
+] as const;
+
+type SpendLineKey = (typeof SPEND_LINE_KEYS)[number];
+
+function mapToolSpendToLineKey(toolName: Tool): SpendLineKey {
+  const provider = TOOL_PROVIDER_KEY[toolName];
+  if (provider === "openai") return "openai";
+  if (provider === "anthropic") return "anthropic";
+  if (provider === "github") return "github";
+  if (
+    provider === "microsoft" ||
+    provider === "cursor" ||
+    provider === "slack"
+  ) {
+    return "microsoft";
+  }
+  return "other";
+}
+
+/** Human-readable period label from telemetry date range. */
+export function computePeriodFromLogs(logs: UsageLog[]): string {
+  if (logs.length === 0) {
+    return "Current period";
+  }
+
+  const dates = logs.map((log) => log.date.slice(0, 10)).sort();
+  const start = new Date(`${dates[0]}T00:00:00Z`);
+  const end = new Date(`${dates[dates.length - 1]}T00:00:00Z`);
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  if (
+    start.getUTCFullYear() === end.getUTCFullYear() &&
+    start.getUTCMonth() === end.getUTCMonth()
+  ) {
+    return formatter.format(start);
+  }
+
+  return `${formatter.format(start)} – ${formatter.format(end)}`;
 }
 
 export function getTeamSummaries(logs: UsageLog[]): TeamSummary[] {
@@ -170,7 +358,9 @@ export function getTeamSummaries(logs: UsageLog[]): TeamSummary[] {
 
   return teams.map((team) => {
     const teamLogs = logs.filter((log) => log.team === team);
-    const spend = roundMoney(teamLogs.reduce((sum, log) => sum + log.cost, 0));
+    const spend = roundMoney(
+      teamLogs.reduce((sum, log) => sum + log.cost, 0),
+    );
     const hoursSaved = teamLogs.reduce(
       (sum, log) => sum + log.estimatedHoursSaved,
       0,
@@ -186,12 +376,16 @@ export function getTeamSummaries(logs: UsageLog[]): TeamSummary[] {
 
     const toolSpend = new Map<Tool, number>();
     for (const log of teamLogs) {
-      toolSpend.set(log.tool, (toolSpend.get(log.tool) ?? 0) + log.cost);
+      toolSpend.set(
+        log.tool,
+        (toolSpend.get(log.tool) ?? 0) + log.cost,
+      );
     }
+
     const topTool =
       [...toolSpend.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ??
       teamLogs[0]?.tool ??
-      ("OpenAI API" as Tool);
+      "OpenAI API";
 
     const modelFit = 1 - getModelMismatchRate(teamLogs);
     const efficiencyScore = calculateEfficiencyScore(
@@ -219,7 +413,9 @@ export function getToolSummaries(logs: UsageLog[]): ToolSummary[] {
 
   return tools.map((tool) => {
     const toolLogs = logs.filter((log) => log.tool === tool);
-    const spend = roundMoney(toolLogs.reduce((sum, log) => sum + log.cost, 0));
+    const spend = roundMoney(
+      toolLogs.reduce((sum, log) => sum + log.cost, 0),
+    );
     const hoursSaved = toolLogs.reduce(
       (sum, log) => sum + log.estimatedHoursSaved,
       0,
@@ -227,9 +423,10 @@ export function getToolSummaries(logs: UsageLog[]): ToolSummary[] {
     const roi = calculateROI(hoursSaved, spend);
     const activeSeats = new Set(toolLogs.map((log) => log.user)).size;
     const totalSeats = SEAT_BASED_TOOLS[tool] ?? 0;
+
     const seatUtilization =
       totalSeats > 0
-        ? roundMoney(activeSeats / totalSeats)
+        ? Math.min(1, roundMoney(activeSeats / totalSeats))
         : activeSeats > 0
           ? 1
           : 0;
@@ -257,8 +454,10 @@ export function getModelFitAnalysis(logs: UsageLog[]): ModelSummary[] {
       modelLogs.length === 0
         ? 0
         : roundScore(
-            modelLogs.reduce((sum, log) => sum + log.complexityScore, 0) /
-              modelLogs.length,
+            modelLogs.reduce(
+              (sum, log) => sum + log.complexityScore,
+              0,
+            ) / modelLogs.length,
           );
     const mismatchRate = getModelMismatchRate(modelLogs);
 
@@ -271,18 +470,21 @@ export function getModelFitAnalysis(logs: UsageLog[]): ModelSummary[] {
   });
 }
 
-export function detectAnomalies(
+function detectAnomalies(
   logs: UsageLog[],
   byTeam: TeamSummary[],
   byTool: ToolSummary[],
   byModel: ModelSummary[],
 ): AnomalySummary[] {
   const anomalies: AnomalySummary[] = [];
-
   const weeklyTeamSpend = new Map<string, number>();
+
   for (const log of logs) {
     const key = `${log.team}|${getIsoWeek(log.date)}`;
-    weeklyTeamSpend.set(key, (weeklyTeamSpend.get(key) ?? 0) + log.cost);
+    weeklyTeamSpend.set(
+      key,
+      (weeklyTeamSpend.get(key) ?? 0) + log.cost,
+    );
   }
 
   const teamBaselines = new Map<Team, number>();
@@ -290,6 +492,7 @@ export function detectAnomalies(
     const weeks = [...weeklyTeamSpend.entries()]
       .filter(([key]) => key.startsWith(`${team.name}|`))
       .map(([, spend]) => spend);
+
     if (weeks.length > 0) {
       teamBaselines.set(
         team.name,
@@ -301,6 +504,7 @@ export function detectAnomalies(
   for (const [key, spend] of weeklyTeamSpend) {
     const [teamName, week] = key.split("|") as [Team, string];
     const baseline = teamBaselines.get(teamName) ?? 0;
+
     if (baseline > 0 && spend >= baseline * 2.5) {
       const ratio = `${roundPercent((spend / baseline) * 100) / 100}x`;
       anomalies.push({
@@ -318,13 +522,19 @@ export function detectAnomalies(
     if (tool.totalSeats > 0 && tool.seatUtilization < 0.3) {
       const inactive = tool.totalSeats - tool.activeSeats;
       const utilization = roundPercent(tool.seatUtilization * 100);
-      const inactivePercent = roundPercent((1 - tool.seatUtilization) * 100);
+      const inactivePercent = roundPercent(
+        (1 - tool.seatUtilization) * 100,
+      );
+
       anomalies.push({
         id: "low-seat-utilization",
         description: `${tool.name} has ${utilization}% seat utilization — ${inactive} of ${tool.totalSeats} configured seats show limited activity`,
         magnitude: `${inactivePercent}% seats inactive`,
         affectedEntity: tool.name,
-        week: getIsoWeek(logs[logs.length - 1]?.date ?? new Date().toISOString()),
+        week: getIsoWeek(
+          logs[logs.length - 1]?.date ??
+            new Date().toISOString(),
+        ),
         params: {
           tool: tool.name,
           utilization,
@@ -343,7 +553,9 @@ export function detectAnomalies(
       description: `${lowestRoiTeam.name} ROI is ${lowestRoiTeam.roi}% — spend is high relative to hours saved`,
       magnitude: "Lowest team ROI",
       affectedEntity: lowestRoiTeam.name,
-      week: getIsoWeek(logs[logs.length - 1]?.date ?? new Date().toISOString()),
+      week: getIsoWeek(
+        logs[logs.length - 1]?.date ?? new Date().toISOString(),
+      ),
       params: { team: lowestRoiTeam.name, roi: lowestRoiTeam.roi },
     });
   }
@@ -356,7 +568,9 @@ export function detectAnomalies(
       description: `Claude Opus mismatch rate at ${mismatch}% — many Engineering calls use Opus on low-complexity tasks`,
       magnitude: `${mismatch}% mismatch rate`,
       affectedEntity: "Claude Opus",
-      week: getIsoWeek(logs[logs.length - 1]?.date ?? new Date().toISOString()),
+      week: getIsoWeek(
+        logs[logs.length - 1]?.date ?? new Date().toISOString(),
+      ),
       params: { mismatch },
     });
   }
@@ -369,7 +583,9 @@ function getUserSummaries(logs: UsageLog[]): UserSpendSummary[] {
 
   return users.map((user) => {
     const userLogs = logs.filter((log) => log.user === user);
-    const spend = roundMoney(userLogs.reduce((sum, log) => sum + log.cost, 0));
+    const spend = roundMoney(
+      userLogs.reduce((sum, log) => sum + log.cost, 0),
+    );
     const hoursSaved = userLogs.reduce(
       (sum, log) => sum + log.estimatedHoursSaved,
       0,
@@ -378,16 +594,20 @@ function getUserSummaries(logs: UsageLog[]): UserSpendSummary[] {
 
     const toolSpend = new Map<Tool, number>();
     for (const log of userLogs) {
-      toolSpend.set(log.tool, (toolSpend.get(log.tool) ?? 0) + log.cost);
+      toolSpend.set(
+        log.tool,
+        (toolSpend.get(log.tool) ?? 0) + log.cost,
+      );
     }
+
     const primaryTool =
       [...toolSpend.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ??
       userLogs[0]?.tool ??
-      ("OpenAI API" as Tool);
+      "OpenAI API";
 
     return {
       user,
-      team: userLogs[0]?.team ?? ("Engineering" as Team),
+      team: userLogs[0]?.team ?? "Engineering",
       spend,
       roi,
       primaryTool,
@@ -395,7 +615,9 @@ function getUserSummaries(logs: UsageLog[]): UserSpendSummary[] {
   });
 }
 
-function getLowProductivityUsers(logs: UsageLog[]): LowProductivityUser[] {
+function getLowProductivityUsers(
+  logs: UsageLog[],
+): LowProductivityUser[] {
   return getUserSummaries(logs)
     .filter((user) => user.roi < 100)
     .sort((a, b) => a.roi - b.roi)
@@ -412,12 +634,17 @@ function getLowProductivityUsers(logs: UsageLog[]): LowProductivityUser[] {
     }));
 }
 
-export function estimateCostSavingsOpportunity(byTool: ToolSummary[]): number {
+export function estimateCostSavingsOpportunity(
+  byTool: ToolSummary[],
+): number {
   let savings = 0;
 
   for (const tool of byTool) {
     if (tool.totalSeats > 0) {
-      const unused = Math.max(0, tool.totalSeats - tool.activeSeats);
+      const unused = Math.max(
+        0,
+        tool.totalSeats - tool.activeSeats,
+      );
       const seatCost = SEAT_MONTHLY_COST[tool.name] ?? 20;
       savings += unused * seatCost;
     }
@@ -435,7 +662,7 @@ export function countUnderusedSeats(byTool: ToolSummary[]): number {
   }, 0);
 }
 
-export function getOptimizationRecommendations(
+function getOptimizationRecommendations(
   data: Pick<
     AnalyticsData,
     "byTeam" | "byTool" | "byModel" | "kpis" | "anomalies"
@@ -449,6 +676,7 @@ export function getOptimizationRecommendations(
     if (unused >= 10) {
       const seatsToReduce = Math.min(12, unused);
       const cursorUtil = roundPercent(cursor.seatUtilization * 100);
+
       recommendations.push({
         id: "rec-cursor-seats",
         title: "Reclaim inactive Cursor seats",
@@ -456,7 +684,9 @@ export function getOptimizationRecommendations(
         evidence: `${unused} of ${cursor.totalSeats} Cursor seats are inactive (${cursorUtil}% utilization).`,
         riskLevel: "low",
         confidence: 0.92,
-        estimatedMonthlySavings: roundMoney(unused * (SEAT_MONTHLY_COST.Cursor ?? 32)),
+        estimatedMonthlySavings: roundMoney(
+          unused * (SEAT_MONTHLY_COST.Cursor ?? 32),
+        ),
         category: "seat-reduction",
         i18nParams: {
           seats: seatsToReduce,
@@ -480,7 +710,8 @@ export function getOptimizationRecommendations(
       riskLevel: "low",
       confidence: 0.88,
       estimatedMonthlySavings: roundMoney(
-        (slack.totalSeats - slack.activeSeats) * (SEAT_MONTHLY_COST["Slack AI"] ?? 12),
+        (slack.totalSeats - slack.activeSeats) *
+          (SEAT_MONTHLY_COST["Slack AI"] ?? 12),
       ),
       category: "seat-reduction",
       i18nParams: {
@@ -507,7 +738,9 @@ export function getOptimizationRecommendations(
     });
   }
 
-  const marketing = data.byTeam.find((team) => team.name === "Marketing");
+  const marketing = data.byTeam.find(
+    (team) => team.name === "Marketing",
+  );
   if (marketing && marketing.roi < 100) {
     recommendations.push({
       id: "rec-marketing-workflow",
@@ -535,7 +768,9 @@ export function getOptimizationRecommendations(
       evidence: `Organization ROI is ${data.kpis.totalROI}% with ${data.kpis.activeUsers} active users.`,
       riskLevel: "low",
       confidence: 0.7,
-      estimatedMonthlySavings: roundMoney(data.kpis.costSavingsOpportunity * 0.1),
+      estimatedMonthlySavings: roundMoney(
+        data.kpis.costSavingsOpportunity * 0.1,
+      ),
       category: "tool-consolidation",
       i18nParams: {
         orgRoi: data.kpis.totalROI,
@@ -547,7 +782,80 @@ export function getOptimizationRecommendations(
   return recommendations;
 }
 
-export function buildDashboardContext(data: AnalyticsData): DashboardContext {
+/** Canonical analytics entry point — all KPIs derive from normalized UsageLog[]. */
+export function computeAnalyticsData(
+  logs: UsageLog[] = loadUsageLogs(),
+): AnalyticsData {
+  const byTeam = getTeamSummaries(logs);
+  const byTool = getToolSummaries(logs);
+  const byModel = getModelFitAnalysis(logs);
+  const anomalies = detectAnomalies(logs, byTeam, byTool, byModel);
+
+  const totalSpend = roundMoney(
+    logs.reduce((sum, log) => sum + log.cost, 0),
+  );
+  const hoursSaved = logs.reduce(
+    (sum, log) => sum + log.estimatedHoursSaved,
+    0,
+  );
+  const successfulTasks = logs.reduce(
+    (sum, log) => sum + log.successfulTasks,
+    0,
+  );
+  const totalROI = calculateROI(hoursSaved, totalSpend);
+  const wasteRatio = calculateWasteRatio(logs);
+  const activeUsers = new Set(logs.map((log) => log.user)).size;
+  const underusedSeats = countUnderusedSeats(byTool);
+  const costSavingsOpportunity =
+    estimateCostSavingsOpportunity(byTool);
+
+  const kpis: AnalyticsKpis = {
+    totalSpend,
+    totalROI,
+    efficiencyScore: calculateEfficiencyScore(
+      totalROI,
+      getSuccessRate(logs),
+      1 - getModelMismatchRate(logs),
+      getAverageSeatUtilization(byTool),
+    ),
+    wasteRatio,
+    hoursSaved: roundScore(hoursSaved),
+    activeUsers,
+    underusedSeats,
+    costSavingsOpportunity,
+    costPerSuccessfulTask: calculateCPT(
+      totalSpend,
+      successfulTasks,
+    ),
+  };
+
+  const recommendations = getOptimizationRecommendations({
+    byTeam,
+    byTool,
+    byModel,
+    kpis,
+    anomalies,
+  });
+
+  return {
+    period: computePeriodFromLogs(logs),
+    logs,
+    kpis,
+    byTeam,
+    byTool,
+    byModel,
+    anomalies,
+    topSpenders: getUserSummaries(logs)
+      .sort((a, b) => b.spend - a.spend)
+      .slice(0, 5),
+    lowProductivity: getLowProductivityUsers(logs),
+    recommendations,
+  };
+}
+
+export function buildDashboardContext(
+  data: AnalyticsData,
+): DashboardContext {
   return {
     period: data.period,
     totalSpend: data.kpis.totalSpend,
@@ -566,66 +874,53 @@ export function buildDashboardContext(data: AnalyticsData): DashboardContext {
   };
 }
 
-export function computeAnalyticsData(logs: UsageLog[] = loadUsageLogs()): AnalyticsData {
-  const byTeam = getTeamSummaries(logs);
-  const byTool = getToolSummaries(logs);
-  const byModel = getModelFitAnalysis(logs);
-  const anomalies = detectAnomalies(logs, byTeam, byTool, byModel);
+/** Weekly spend series for overview charts — derived from telemetry only. */
+export function getSpendOverTime(
+  logs: UsageLog[],
+): SpendOverTimePoint[] {
+  const weeklyByTool = new Map<string, Map<Tool, number>>();
+  const weekSampleDate = new Map<string, string>();
 
-  const totalSpend = roundMoney(logs.reduce((sum, log) => sum + log.cost, 0));
-  const hoursSaved = logs.reduce((sum, log) => sum + log.estimatedHoursSaved, 0);
-  const successfulTasks = logs.reduce(
-    (sum, log) => sum + log.successfulTasks,
-    0,
+  for (const log of logs) {
+    const week = getIsoWeek(log.date);
+    const toolBuckets =
+      weeklyByTool.get(week) ?? new Map<Tool, number>();
+    toolBuckets.set(
+      log.tool,
+      roundMoney((toolBuckets.get(log.tool) ?? 0) + log.cost),
+    );
+    weeklyByTool.set(week, toolBuckets);
+
+    if (!weekSampleDate.has(week)) {
+      weekSampleDate.set(week, log.date.slice(0, 10));
+    }
+  }
+
+  const sortedWeeks = [...weeklyByTool.keys()].sort((a, b) =>
+    a.localeCompare(b),
   );
-  const totalROI = calculateROI(hoursSaved, totalSpend);
-  const wasteRatio = calculateWasteRatio(logs);
-  const activeUsers = new Set(logs.map((log) => log.user)).size;
-  const underusedSeats = countUnderusedSeats(byTool);
-  const costSavingsOpportunity = estimateCostSavingsOpportunity(byTool);
 
-  const kpis: AnalyticsKpis = {
-    totalSpend,
-    totalROI,
-    efficiencyScore: calculateEfficiencyScore(
-      totalROI,
-      getSuccessRate(logs),
-      1 - getModelMismatchRate(logs),
-      getAverageSeatUtilization(byTool),
-    ),
-    wasteRatio,
-    hoursSaved: roundScore(hoursSaved),
-    activeUsers,
-    underusedSeats,
-    costSavingsOpportunity,
-    costPerSuccessfulTask: calculateCPT(totalSpend, successfulTasks),
-  };
+  return sortedWeeks.slice(-16).map((week) => {
+    const lines: Record<SpendLineKey, number> = {
+      openai: 0,
+      anthropic: 0,
+      github: 0,
+      microsoft: 0,
+      other: 0,
+    };
 
-  const partial = { byTeam, byTool, byModel, kpis, anomalies };
-  const recommendations = getOptimizationRecommendations(partial);
+    for (const [toolName, amount] of weeklyByTool.get(week) ?? []) {
+      const key = mapToolSpendToLineKey(toolName);
+      lines[key] = roundMoney(lines[key] + amount);
+    }
 
-  const metricsPeriod =
-    typeof mockMetrics === "object" &&
-    mockMetrics !== null &&
-    "period" in mockMetrics &&
-    typeof mockMetrics.period === "string"
-      ? mockMetrics.period
-      : "Current period";
+    const sampleDate = weekSampleDate.get(week) ?? week;
 
-  return {
-    period: metricsPeriod,
-    logs,
-    kpis,
-    byTeam,
-    byTool,
-    byModel,
-    anomalies,
-    topSpenders: getUserSummaries(logs)
-      .sort((a, b) => b.spend - a.spend)
-      .slice(0, 5),
-    lowProductivity: getLowProductivityUsers(logs),
-    recommendations,
-  };
+    return {
+      label: sampleDate.slice(5),
+      ...lines,
+    };
+  });
 }
 
 export function getAvailableMonths(logs: UsageLog[]): string[] {
@@ -635,7 +930,7 @@ export function getAvailableMonths(logs: UsageLog[]): string[] {
 
 export function filterUsageLogs(
   logs: UsageLog[],
-  filters: Pick<CostAnalyticsFilters, "team" | "tool" | "month">,
+  filters: CostAnalyticsFilters,
 ): UsageLog[] {
   return logs.filter((log) => {
     if (filters.team !== "all" && log.team !== filters.team) {
@@ -644,7 +939,10 @@ export function filterUsageLogs(
     if (filters.tool !== "all" && log.tool !== filters.tool) {
       return false;
     }
-    if (filters.month !== "all" && !log.date.startsWith(filters.month)) {
+    if (
+      filters.month !== "all" &&
+      !log.date.startsWith(filters.month)
+    ) {
       return false;
     }
     return true;
@@ -656,11 +954,14 @@ function summarizeLogs(logs: UsageLog[]): {
   hoursSaved: number;
   roi: number;
 } {
-  const spend = roundMoney(logs.reduce((sum, log) => sum + log.cost, 0));
+  const spend = roundMoney(
+    logs.reduce((sum, log) => sum + log.cost, 0),
+  );
   const hoursSaved = logs.reduce(
     (sum, log) => sum + log.estimatedHoursSaved,
     0,
   );
+
   return {
     spend,
     hoursSaved: roundScore(hoursSaved),
@@ -673,8 +974,10 @@ export function getCostBreakdown(
   filters: CostAnalyticsFilters,
 ): CostBreakdownRow[] {
   const filtered = filterUsageLogs(logs, filters);
-  const totalSpend = filtered.reduce((sum, log) => sum + log.cost, 0);
-
+  const totalSpend = filtered.reduce(
+    (sum, log) => sum + log.cost,
+    0,
+  );
   const groups = new Map<string, UsageLog[]>();
 
   for (const log of filtered) {
@@ -690,6 +993,7 @@ export function getCostBreakdown(
         key = log.date.slice(0, 7);
         break;
     }
+
     const bucket = groups.get(key) ?? [];
     bucket.push(log);
     groups.set(key, bucket);
@@ -703,7 +1007,9 @@ export function getCostBreakdown(
         label: key,
         spend: summary.spend,
         sharePercent:
-          totalSpend > 0 ? roundPercent((summary.spend / totalSpend) * 100) : 0,
+          totalSpend > 0
+            ? roundPercent((summary.spend / totalSpend) * 100)
+            : 0,
         roi: summary.roi,
         hoursSaved: summary.hoursSaved,
       };
@@ -711,28 +1017,37 @@ export function getCostBreakdown(
     .sort((a, b) => b.spend - a.spend);
 }
 
-export function categorizeUsageLog(
+function categorizeUsageLog(
   log: UsageLog,
   teamAverageCpt: number,
 ): AICategorizationResult {
-  const roi = calculateROI(log.estimatedHoursSaved, log.cost);
+  const roi = calculateROI(
+    log.estimatedHoursSaved,
+    log.cost,
+  );
   const successRate =
-    log.totalTasks > 0 ? log.successfulTasks / log.totalTasks : 0;
+    log.totalTasks > 0
+      ? log.successfulTasks / log.totalTasks
+      : 0;
   const isMismatch =
     HIGH_COMPLEXITY_MODELS.includes(log.model) &&
     log.complexityScore < COMPLEXITY_MISMATCH_THRESHOLD;
 
-  let productivityLevel: AICategorizationResult["productivityLevel"] = "medium";
+  let productivityLevel: ProductivityLevel = "medium";
   if (roi >= 200 && successRate >= 0.7) {
     productivityLevel = "high";
   } else if (roi < 80 || successRate < 0.5) {
     productivityLevel = "low";
   }
 
-  let impactLevel: AICategorizationResult["impactLevel"] = "medium-impact";
+  let impactLevel: ImpactLevel = "medium-impact";
   if (roi < LOW_ROI_THRESHOLD || isMismatch) {
     impactLevel = "waste";
-  } else if (teamAverageCpt > 0 && log.cost > teamAverageCpt * 2.5 && roi < 150) {
+  } else if (
+    teamAverageCpt > 0 &&
+    log.cost > teamAverageCpt * 2.5 &&
+    roi < 150
+  ) {
     impactLevel = "high-cost";
   } else if (roi >= 250) {
     impactLevel = "high-impact";
@@ -756,7 +1071,9 @@ export function categorizeUsageLog(
   };
 }
 
-export function getCategorizedUsageLogs(logs: UsageLog[]): CategorizedUsageLog[] {
+export function getCategorizedUsageLogs(
+  logs: UsageLog[],
+): CategorizedUsageLog[] {
   const teamCpt = new Map<Team, number>();
   for (const team of getTeamSummaries(logs)) {
     teamCpt.set(team.name, team.cpt);
@@ -765,7 +1082,10 @@ export function getCategorizedUsageLogs(logs: UsageLog[]): CategorizedUsageLog[]
   return logs.map((log) => ({
     ...log,
     roi: calculateROI(log.estimatedHoursSaved, log.cost),
-    categorization: categorizeUsageLog(log, teamCpt.get(log.team) ?? 0),
+    categorization: categorizeUsageLog(
+      log,
+      teamCpt.get(log.team) ?? 0,
+    ),
   }));
 }
 
@@ -773,11 +1093,16 @@ export function getPaginatedLogs<T>(
   items: T[],
   page: number,
   pageSize: number,
-): { items: T[]; totalPages: number; totalItems: number } {
+): {
+  items: T[];
+  totalPages: number;
+  totalItems: number;
+} {
   const totalItems = items.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(Math.max(1, page), totalPages);
   const start = (safePage - 1) * pageSize;
+
   return {
     items: items.slice(start, start + pageSize),
     totalPages,
@@ -785,13 +1110,23 @@ export function getPaginatedLogs<T>(
   };
 }
 
-export function getTeamDetailCards(data: AnalyticsData): TeamDetailCard[] {
+export function getTeamDetailCards(
+  data: AnalyticsData,
+): TeamDetailCard[] {
   return data.byTeam.map((team) => {
-    const teamLogs = data.logs.filter((log) => log.team === team.name);
-    const hoursSaved = roundScore(
-      teamLogs.reduce((sum, log) => sum + log.estimatedHoursSaved, 0),
+    const teamLogs = data.logs.filter(
+      (log) => log.team === team.name,
     );
-    const totalTasks = teamLogs.reduce((sum, log) => sum + log.totalTasks, 0);
+    const hoursSaved = roundScore(
+      teamLogs.reduce(
+        (sum, log) => sum + log.estimatedHoursSaved,
+        0,
+      ),
+    );
+    const totalTasks = teamLogs.reduce(
+      (sum, log) => sum + log.totalTasks,
+      0,
+    );
     const successfulTasks = teamLogs.reduce(
       (sum, log) => sum + log.successfulTasks,
       0,
@@ -800,8 +1135,10 @@ export function getTeamDetailCards(data: AnalyticsData): TeamDetailCard[] {
       teamLogs.length === 0
         ? 0
         : roundScore(
-            teamLogs.reduce((sum, log) => sum + log.complexityScore, 0) /
-              teamLogs.length,
+            teamLogs.reduce(
+              (sum, log) => sum + log.complexityScore,
+              0,
+            ) / teamLogs.length,
           );
 
     return {
@@ -814,30 +1151,29 @@ export function getTeamDetailCards(data: AnalyticsData): TeamDetailCard[] {
   });
 }
 
-export function getToolComparisonRows(data: AnalyticsData): ToolComparisonRow[] {
-  interface MetricsToolRow {
-    name: Tool;
-    spend: number;
-    roi: number;
-    seatUtilization: number;
-    activeSeats: number;
-    totalSeats: number;
-    requests: number;
-    hoursSaved: number;
-    cpt: number;
-  }
-
-  const metricsTools =
-    typeof mockMetrics === "object" &&
-    mockMetrics !== null &&
-    "byTool" in mockMetrics &&
-    Array.isArray(mockMetrics.byTool)
-      ? (mockMetrics.byTool as MetricsToolRow[])
-      : [];
-
+export function getToolComparisonRows(
+  data: AnalyticsData,
+): ToolComparisonRow[] {
   return data.byTool
     .map((tool) => {
-      const metricsRow = metricsTools.find((row) => row.name === tool.name);
+      const toolLogs = data.logs.filter(
+        (log) => log.tool === tool.name,
+      );
+      const successfulTasks = toolLogs.reduce(
+        (sum, log) => sum + log.successfulTasks,
+        0,
+      );
+      const requests = toolLogs.reduce(
+        (sum, log) => sum + log.requests,
+        0,
+      );
+      const hoursSaved = roundScore(
+        toolLogs.reduce(
+          (sum, log) => sum + log.estimatedHoursSaved,
+          0,
+        ),
+      );
+
       return {
         name: tool.name,
         spend: tool.spend,
@@ -845,67 +1181,47 @@ export function getToolComparisonRows(data: AnalyticsData): ToolComparisonRow[] 
         seatUtilization: tool.seatUtilization,
         activeSeats: tool.activeSeats,
         totalSeats: tool.totalSeats,
-        requests: metricsRow?.requests ?? 0,
-        hoursSaved: roundScore(metricsRow?.hoursSaved ?? 0),
-        cpt:
-          metricsRow?.cpt ??
-          calculateCPT(
-            tool.spend,
-            data.logs
-              .filter((log) => log.tool === tool.name)
-              .reduce((sum, log) => sum + log.successfulTasks, 0),
-          ),
+        requests,
+        hoursSaved,
+        cpt: calculateCPT(tool.spend, successfulTasks),
       };
     })
     .sort((a, b) => b.spend - a.spend);
 }
 
-export function getModelUsageRows(data: AnalyticsData): ModelUsageRow[] {
-  interface MetricsModelRow {
-    name: Model;
-    tier?: string;
-    spend: number;
-    requests?: number;
-    avgComplexityScore: number;
-    mismatchRate: number;
-    roi?: number;
-  }
-
-  const metricsModels =
-    typeof mockMetrics === "object" &&
-    mockMetrics !== null &&
-    "byModel" in mockMetrics &&
-    Array.isArray(mockMetrics.byModel)
-      ? (mockMetrics.byModel as MetricsModelRow[])
-      : [];
-
+export function getModelUsageRows(
+  data: AnalyticsData,
+): ModelUsageRow[] {
   return data.byModel
     .map((model) => {
-      const metricsRow = metricsModels.find((row) => row.name === model.name);
-      const modelLogs = data.logs.filter((log) => log.model === model.name);
+      const modelLogs = data.logs.filter(
+        (log) => log.model === model.name,
+      );
       const hoursSaved = modelLogs.reduce(
         (sum, log) => sum + log.estimatedHoursSaved,
         0,
       );
-      const spend = model.spend;
+      const requests = modelLogs.reduce(
+        (sum, log) => sum + log.requests,
+        0,
+      );
+
       return {
         name: model.name,
-        tier: metricsRow?.tier ?? "mid",
-        spend,
-        requests:
-          metricsRow?.requests ??
-          modelLogs.reduce((sum, log) => sum + log.requests, 0),
+        tier: MODEL_TIER[model.name],
+        spend: model.spend,
+        requests,
         avgComplexityScore: model.avgComplexityScore,
         mismatchRate: model.mismatchRate,
-        roi:
-          metricsRow?.roi ??
-          calculateROI(hoursSaved, spend),
+        roi: calculateROI(hoursSaved, model.spend),
       };
     })
     .sort((a, b) => b.spend - a.spend);
 }
 
-export function getRoiEfficiencyMetrics(data: AnalyticsData): RoiEfficiencyMetrics {
+export function getRoiEfficiencyMetrics(
+  data: AnalyticsData,
+): RoiEfficiencyMetrics {
   return {
     totalROI: data.kpis.totalROI,
     efficiencyScore: data.kpis.efficiencyScore,

@@ -14,6 +14,7 @@ import {
   inferTaskCounts,
   generateLogId,
 } from "./shared"
+import { calculateCost } from "@/lib/pricing";
 
 // ─────────────────────────────────────────────────────────────
 // Raw type — what Cursor exports
@@ -63,48 +64,10 @@ const FEATURE_USAGE_TYPE = {
 } as const
 
 // ─────────────────────────────────────────────────────────────
-// Cost calculation
-// Cursor Pro = $20/seat/month (flat), but we track token costs
-// for model-level analysis using Anthropic/OpenAI public rates
-// ─────────────────────────────────────────────────────────────
-
-const COST_PER_1K_INPUT: Record<Model, number> = {
-  "Claude Opus":   0.015,
-  "Claude Sonnet": 0.003,
-  "Claude Haiku":  0.00025,
-  "GPT-4":         0.03,
-  "GPT-4o":        0.005,
-  "GPT-4o-mini":   0.00015,
-  "GPT-3.5":       0.0005,
-  "Gemini Pro":    0.00125,
-  "Gemini Ultra":  0.01,
-  "N/A":           0.001,
-}
-
-const COST_PER_1K_OUTPUT: Record<Model, number> = {
-  "Claude Opus":   0.075,
-  "Claude Sonnet": 0.015,
-  "Claude Haiku":  0.00125,
-  "GPT-4":         0.06,
-  "GPT-4o":        0.015,
-  "GPT-4o-mini":   0.0006,
-  "GPT-3.5":       0.0015,
-  "Gemini Pro":    0.005,
-  "Gemini Ultra":  0.03,
-  "N/A":           0.002,
-}
-
-function calculateCost(model: Model, inputTokens: number, outputTokens: number): number {
-  const inputCost  = (inputTokens  / 1000) * COST_PER_1K_INPUT[model]
-  const outputCost = (outputTokens / 1000) * COST_PER_1K_OUTPUT[model]
-  return Math.round((inputCost + outputCost) * 100) / 100
-}
-
-// ─────────────────────────────────────────────────────────────
 // Adapter
 // ─────────────────────────────────────────────────────────────
 
-export function adaptCursorRecord(raw: CursorRawRecord, index: number): UsageLog {
+export function adaptCursorRecord(raw: CursorRawRecord): UsageLog {
   const model       = CURSOR_MODEL_MAP[raw.model] ?? "GPT-4o-mini"
   const usageType   = FEATURE_USAGE_TYPE[raw.feature] ?? "coding"
   const inputTokens = raw.prompt_tokens
@@ -113,7 +76,7 @@ export function adaptCursorRecord(raw: CursorRawRecord, index: number): UsageLog
   const { successfulTasks, totalTasks } = inferTaskCounts(raw.total_completions || 1, usageType)
 
   return {
-    id:                  generateLogId("cursor", index),
+    id:                  generateLogId("cursor", raw.session_id),
     date:                raw.timestamp,
     team:                raw.team_name as Team,
     user:                raw.user_display_name,
@@ -128,10 +91,10 @@ export function adaptCursorRecord(raw: CursorRawRecord, index: number): UsageLog
     estimatedHoursSaved: inferHoursSaved(outputTokens, usageType),
     successfulTasks,
     totalTasks,
-    complexityScore:     inferComplexityScore(model, usageType),
+    complexityScore:     inferComplexityScore(model, usageType, raw.session_id),
   }
 }
 
 export function adaptCursorRecords(records: CursorRawRecord[]): UsageLog[] {
-  return records.map((r, i) => adaptCursorRecord(r, i))
+  return records.map((r) => adaptCursorRecord(r))
 }

@@ -1,4 +1,3 @@
-import mockMetrics from "@/data/mock_metrics.json";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import {
   calculateCPT,
@@ -8,6 +7,7 @@ import {
   estimateCostSavingsOpportunity,
   getAverageSeatUtilization,
   getModelMismatchRate,
+  getSpendOverTime,
   getSuccessRate,
   getToolSummaries,
   roundMoney,
@@ -22,7 +22,6 @@ import type {
   OverviewPageData,
   ProviderSpendItem,
   RoiChartItem,
-  SpendOverTimePoint,
   Tool,
   UsageLog,
 } from "@/lib/types";
@@ -37,21 +36,6 @@ const TOOL_PROVIDER_KEY: Record<Tool, string> = {
   "Google Gemini": "google",
   "Internal Agent": "internal",
 };
-
-const SPEND_LINE_KEYS = [
-  "openai",
-  "anthropic",
-  "github",
-  "microsoft",
-  "other",
-] as const;
-
-interface MetricsSpendWeek {
-  week: string;
-  date: string;
-  totalSpend: number;
-  byTool: Record<string, number>;
-}
 
 function percentChange(current: number, previous: number): number {
   if (previous === 0) {
@@ -350,49 +334,6 @@ export function getSpendByProvider(data: AnalyticsData): ProviderSpendItem[] {
     .sort((a, b) => b.value - a.value);
 }
 
-type SpendLineKey = (typeof SPEND_LINE_KEYS)[number];
-
-function mapToolSpendToLineKey(toolName: string): SpendLineKey {
-  const provider = TOOL_PROVIDER_KEY[toolName as Tool];
-  if (provider === "openai") return "openai";
-  if (provider === "anthropic") return "anthropic";
-  if (provider === "github") return "github";
-  if (provider === "microsoft" || provider === "cursor" || provider === "slack") {
-    return "microsoft";
-  }
-  return "other";
-}
-
-export function getSpendOverTime(): SpendOverTimePoint[] {
-  const weeks =
-    typeof mockMetrics === "object" &&
-    mockMetrics !== null &&
-    "spendOverTime" in mockMetrics &&
-    Array.isArray(mockMetrics.spendOverTime)
-      ? (mockMetrics.spendOverTime as MetricsSpendWeek[])
-      : [];
-
-  return weeks.slice(-16).map((week) => {
-    const lines: Record<SpendLineKey, number> = {
-      openai: 0,
-      anthropic: 0,
-      github: 0,
-      microsoft: 0,
-      other: 0,
-    };
-
-    for (const [toolName, amount] of Object.entries(week.byTool)) {
-      const key = mapToolSpendToLineKey(toolName);
-      lines[key] = roundMoney(lines[key] + amount);
-    }
-
-    return {
-      label: week.date.slice(5),
-      ...lines,
-    };
-  });
-}
-
 export function getRoiByTeamInsight(data: AnalyticsData): ChartInsightData {
   const top = [...data.byTeam].sort((a, b) => b.roi - a.roi)[0];
   const expand = [...data.byTeam]
@@ -436,8 +377,6 @@ export function getOverviewPageData(data: AnalyticsData): OverviewPageData {
     roiByTool: getRoiByToolChart(data),
     roiByToolInsight: getRoiByToolInsight(data),
     spendByProvider: getSpendByProvider(data),
-    spendOverTime: getSpendOverTime(),
+    spendOverTime: getSpendOverTime(data.logs),
   };
 }
-
-export { SPEND_LINE_KEYS };

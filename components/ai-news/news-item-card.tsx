@@ -11,11 +11,11 @@ interface NewsItemCardProps {
 }
 
 export function NewsItemCard({ item }: NewsItemCardProps) {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const title =
-    item.id.startsWith("fb-") && t(`fallbackNews.${item.id}.title`) !== `fallbackNews.${item.id}.title`
-      ? t(`fallbackNews.${item.id}.title`)
-      : item.title;
+    item.id.startsWith("fb-") && i18n.exists(`common:fallbackNews.${item.id}.title`)
+    ? t(`fallbackNews.${item.id}.title`)
+    : item.title;
   const summary =
     item.id.startsWith("fb-") &&
     t(`fallbackNews.${item.id}.summary`) !== `fallbackNews.${item.id}.summary`

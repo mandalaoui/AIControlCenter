@@ -15,6 +15,7 @@ import {
   inferTaskCounts,
   generateLogId,
 } from "./shared"
+import { calculateCost } from "@/lib/pricing";
 
 // ─────────────────────────────────────────────────────────────
 // Raw type — GitHub Copilot org usage export
@@ -82,24 +83,6 @@ function inferTokens(raw: GitHubCopilotRawRecord): {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Cost calculation
-// Copilot Business = $19/seat/month
-// We allocate daily cost = $19 / 30 per active day
-// Then scale by activity ratio vs avg daily usage
-// ─────────────────────────────────────────────────────────────
-
-const COPILOT_MONTHLY_SEAT_COST = 19
-const DAILY_SEAT_COST = COPILOT_MONTHLY_SEAT_COST / 30
-
-function calculateCost(raw: GitHubCopilotRawRecord): number {
-  if (!raw.seat_active) return 0
-  // Scale daily cost by how active the user was (vs 4h baseline)
-  const activityRatio = Math.min(1, raw.active_time_seconds / (4 * 3600))
-  const cost = DAILY_SEAT_COST * (0.5 + activityRatio * 0.5)  // min 50% of daily cost
-  return Math.round(cost * 100) / 100
-}
-
-// ─────────────────────────────────────────────────────────────
 // Acceptance rate → task success proxy
 // High acceptance = productive session
 // ─────────────────────────────────────────────────────────────
@@ -126,16 +109,19 @@ function inferCopilotTaskCounts(raw: GitHubCopilotRawRecord): {
 // ─────────────────────────────────────────────────────────────
 
 export function adaptGitHubCopilotRecord(
-  raw: GitHubCopilotRawRecord,
-  index: number
+  raw: GitHubCopilotRawRecord
 ): UsageLog {
   const model                        = COPILOT_MODEL_MAP[raw.model_version] ?? "GPT-4o"
   const usageType                    = raw.chat_turns > raw.suggestions_count ? "research" : "coding"
   const { inputTokens, outputTokens} = inferTokens(raw)
   const { successfulTasks, totalTasks } = inferCopilotTaskCounts(raw)
+  const eventId = generateLogId(
+    "copilot",
+    `${raw.user_login}_${raw.day}_${raw.editor}`,
+  )
 
   return {
-    id:                  generateLogId("copilot", index),
+    id:                  eventId,
     date:                `${raw.day}T09:00:00Z`,
     team:                raw.team_name as Team,
     user:                raw.user_display_name,
@@ -146,14 +132,14 @@ export function adaptGitHubCopilotRecord(
     inputTokens,
     outputTokens,
     requests:            raw.suggestions_count + raw.chat_turns,
-    cost:                calculateCost(raw),
+    cost: calculateCost(model, inputTokens, outputTokens),
     estimatedHoursSaved: inferHoursSaved(outputTokens, usageType),
     successfulTasks,
     totalTasks,
-    complexityScore:     inferComplexityScore(model, usageType),
+    complexityScore:     inferComplexityScore(model, usageType, eventId),
   }
 }
 
 export function adaptGitHubCopilotRecords(records: GitHubCopilotRawRecord[]): UsageLog[] {
-  return records.map((r, i) => adaptGitHubCopilotRecord(r, i))
+  return records.map((r) => adaptGitHubCopilotRecord(r))
 }

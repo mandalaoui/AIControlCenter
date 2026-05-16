@@ -24,11 +24,24 @@ const MODEL_COMPLEXITY_BASELINE: Record<Model, number> = {
   "N/A":           3,
 }
 
+/** Deterministic ±2 variance from a stable seed (record id). */
+function deterministicVariance(seed: string): number {
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0
+  }
+  return (Math.abs(hash) % 400) / 100 - 2
+}
+
 /**
  * Infers complexityScore (1–10) from model tier + usageType.
- * Adds ±2 variance to avoid flat data in mock.
+ * Variance is deterministic per seed so telemetry generation is reproducible.
  */
-export function inferComplexityScore(model: Model, usageType: UsageType): number {
+export function inferComplexityScore(
+  model: Model,
+  usageType: UsageType,
+  seed = "",
+): number {
   const base = MODEL_COMPLEXITY_BASELINE[model]
 
   const usageModifier: Record<UsageType, number> = {
@@ -40,7 +53,9 @@ export function inferComplexityScore(model: Model, usageType: UsageType): number
     support:    -2,
   }
 
-  const variance = (Math.random() * 4) - 2           // –2 to +2
+  const variance = deterministicVariance(
+    seed || `${model}-${usageType}`,
+  )
   const raw = base + usageModifier[usageType] + variance
   return Math.min(10, Math.max(1, Math.round(raw)))
 }
@@ -56,15 +71,15 @@ export function inferComplexityScore(model: Model, usageType: UsageType): number
  * usageType multiplier reflects how much time AI actually displaces.
  */
 export function inferHoursSaved(outputTokens: number, usageType: UsageType): number {
-  const BASE_HOURS_PER_1K_TOKENS = 0.5
+  const BASE_HOURS_PER_1K_TOKENS = 0.08
 
   const multiplier: Record<UsageType, number> = {
-    coding:     1.8,   // code gen saves a lot of time
-    automation: 1.6,
-    research:   1.4,
-    analysis:   1.2,
-    content:    1.0,
-    support:    0.6,   // support tasks are shorter loops
+    coding:     1.2,
+    automation: 1.1,
+    research:   0.9,
+    analysis:   0.8,
+    content:    0.6,
+    support:    0.3,
   }
 
   const raw = (outputTokens / 1000) * BASE_HOURS_PER_1K_TOKENS * multiplier[usageType]
@@ -94,8 +109,10 @@ export function inferTaskCounts(
   }
 
   const totalTasks = Math.max(1, requests)
-  const successfulTasks = Math.max(1, Math.round(totalTasks * successRate[usageType]))
-
+  const successfulTasks = Math.min(
+    totalTasks,
+    Math.round(totalTasks * successRate[usageType]),
+  )
   return { successfulTasks, totalTasks }
 }
 
@@ -103,6 +120,6 @@ export function inferTaskCounts(
 // ID generator
 // ─────────────────────────────────────────────────────────────
 
-export function generateLogId(vendor: string, index: number): string {
-  return `${vendor}_${Date.now()}_${index}`
+export function generateLogId(vendor: string, rawId: string): string {
+  return `${vendor}_${rawId}`;
 }
