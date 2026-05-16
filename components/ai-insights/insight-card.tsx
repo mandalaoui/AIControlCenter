@@ -38,6 +38,12 @@ export function InsightCard({ insight }: InsightCardProps) {
       }
     >
       <p className="mb-3 text-sm text-muted-foreground">{localized.description}</p>
+      {localized.whyThisMatters ? (
+        <p className="mb-3 text-sm leading-relaxed text-foreground/90">
+          <span className="font-medium">{t("whyThisMatters")}: </span>
+          {localized.whyThisMatters}
+        </p>
+      ) : null}
       <div className="mb-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
         <span>
           {t("affectedEntity")}: {translateEntity(localized.affectedEntity, t)}

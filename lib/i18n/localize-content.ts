@@ -81,6 +81,9 @@ export function localizeInsight(insight: AIInsight, t: TFunction): AIInsight {
       entity: translateEntity(insight.affectedEntity, t),
     }),
     description: t(`${base}.description`, { defaultValue: insight.description }),
+    whyThisMatters: t(`${base}.whyThisMatters`, {
+      defaultValue: insight.whyThisMatters,
+    }),
     recommendedAction: t(`${base}.action`, {
       defaultValue: insight.recommendedAction,
     }),

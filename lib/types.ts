@@ -226,16 +226,37 @@ export interface OptimizationRecommendation {
 export type AIInsightType = "anomaly" | "trend" | "recommendation" | "risk";
 export type AIInsightSeverity = "info" | "warning" | "critical";
 
+export type AIInsightCategory =
+  | "strategic"
+  | "financial"
+  | "operational"
+  | "adoption"
+  | "market"
+  | "efficiency"
+  | "risk"
+  | "governance"
+  | "market-change"
+  | "pricing-shift"
+  | "strategic-opportunity"
+  | "vendor-risk";
+
+export type AIInsightPriority = "low" | "medium" | "high" | "critical";
+
 export interface AIInsight {
   id: string;
   type: AIInsightType;
   severity: AIInsightSeverity;
+  category: AIInsightCategory;
+  priority: AIInsightPriority;
   title: string;
   description: string;
+  whyThisMatters: string;
   affectedEntity: string;
   estimatedSavings?: number;
   confidence: number;
   recommendedAction: string;
+  /** NewsItem ids used as external grounding — never shown as fabricated claims. */
+  externalSourceIds?: string[];
 }
 
 export interface QueryMessage {

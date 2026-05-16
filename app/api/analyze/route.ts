@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import { buildFallbackAnalyzeResponse } from "@/lib/ai/fallback-analyze";
 import { analyzeWithLlm, hasLlmApiKey } from "@/lib/ai/clients/llm-client";
 import {
+  enrichAnalyzeResponse,
+  formatExternalContextForPrompt,
+  loadExternalInsightContext,
+} from "@/lib/ai-insights";
+import {
   buildDashboardContext,
   computeAnalyticsData,
 } from "@/lib/analytics";
@@ -23,18 +28,38 @@ export async function POST(request: Request) {
       context = buildDashboardContext(analytics);
     }
 
+    const external = await loadExternalInsightContext();
+    const externalBlock = formatExternalContextForPrompt(external);
+
     if (hasLlmApiKey()) {
       try {
-        const result = await analyzeWithLlm(context);
-        return NextResponse.json(result);
-      } catch {
+        const result = await analyzeWithLlm(context, externalBlock);
+        return NextResponse.json(
+          enrichAnalyzeResponse(context, result, { external }),
+        );
+      } catch (err) {
+        console.error("[analyze] LLM failed, using fallback:", err);
         const analytics = computeAnalyticsData();
-        return NextResponse.json(buildFallbackAnalyzeResponse(analytics));
+        const fallbackContext = buildDashboardContext(analytics);
+        return NextResponse.json(
+          enrichAnalyzeResponse(
+            fallbackContext,
+            buildFallbackAnalyzeResponse(analytics),
+            { external },
+          ),
+        );
       }
     }
 
     const analytics = computeAnalyticsData();
-    return NextResponse.json(buildFallbackAnalyzeResponse(analytics));
+    const fallbackContext = buildDashboardContext(analytics);
+    return NextResponse.json(
+      enrichAnalyzeResponse(
+        fallbackContext,
+        buildFallbackAnalyzeResponse(analytics),
+        { external },
+      ),
+    );
   } catch (error) {
     const t = getServerT();
     const message =

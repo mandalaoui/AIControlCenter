@@ -5,6 +5,8 @@
   "teams": "Teams",
   "toolsModels": "Tools & Models",
   "aiInsights": "AI Insights",
+  "analyzeInsightsAgain": "Analyze insights again",
+  "lastAnalyzed": "Last analyzed",
   "optimizationCenter": "Optimization Center",
   "queryAssistant": "Query Assistant",
   "integrations": "Integrations",
@@ -188,6 +190,7 @@
     "waste": "Waste"
   },
   "executiveSummary": "Executive summary",
+  "whyThisMatters": "Why this matters",
   "analyzingData": "Analyzing your organization data…",
   "errorTitle": "Something went wrong",
   "loadFailed": "Failed to load data.",
