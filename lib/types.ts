@@ -479,6 +479,7 @@ export interface IntegrationConnector {
   descriptionKey: string;
   status: IntegrationStatus;
   lastSyncKey: string;
+  lastSyncDate?: string;
   dataTypeKey: string;
   iconId: string;
 }

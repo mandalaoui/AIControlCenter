@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { IntegrationIcon } from "@/components/integrations/integration-icon";
 import { Button } from "@/components/ui/button";
 import type { IntegrationConnector } from "@/lib/types";
+import { formatDistanceToNow } from "date-fns";
+
 
 interface IntegrationCardProps {
   connector: IntegrationConnector;
@@ -46,7 +48,9 @@ export function IntegrationCard({ connector }: IntegrationCardProps) {
           <p>
             <span className="text-muted-foreground">{t("lastSync")}: </span>
             <span className="font-medium text-foreground">
-              {t(connector.lastSyncKey)}
+              {connector.lastSyncDate
+                ? formatDistanceToNow(new Date(connector.lastSyncDate), { addSuffix: true })
+                : t("integrationSync.never")}
             </span>
           </p>
         </div>

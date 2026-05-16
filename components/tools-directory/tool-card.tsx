@@ -26,7 +26,7 @@ export function ToolCard({ tool, onSelect }: ToolCardProps) {
     <button
       type="button"
       onClick={() => onSelect(tool)}
-      className="flex h-full flex-col rounded-lg border border-border bg-card p-5 text-start transition-colors hover:bg-accent/50"
+      className="flex h-full flex-col rounded-lg border border-border bg-card p-5 text-start transition-colors hover:bg-accent/50 cursor-pointer"
     >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
